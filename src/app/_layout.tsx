@@ -7,9 +7,18 @@ export default function Layout(){
                 name="index"
                 options={{headerShown:false}}
             />
+            <Stack.Screen
+                name="menu"
+                options={{headerShown: false}}
+            />
+            <Stack.Screen
+                name="pagamento"
+                options={{headerShown: false}}
+            />
         </Stack>
 
     ) 
         
         
 }
+        
