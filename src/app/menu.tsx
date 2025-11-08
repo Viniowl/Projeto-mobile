@@ -1,59 +1,37 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { useSharedValue, withSpring, useAnimatedStyle } from 'react-native-reanimated';
+import React, { useEffect, useState } from 'react';
+import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-interface MenuItemData {
-  id: string;
-  title: string;
-  price: string;
-  category: 'sabores' | 'bebidas';
-  image?: any;
-}
+import { MenuItem } from '../components/menu/MenuItem';
+import { useCart } from '../context/CartContext';
+import { menuData, MenuItemData } from '../data/menuData';
 
-const menuData: MenuItemData[] = [
-  { id: '1', title: 'Carne', price: 'R$ 8,00', category: 'sabores', image: require('../../assets/images/pasteldecarne.png') },
-  { id: '2', title: 'Queijo', price: 'R$ 8,00', category: 'sabores', image: require('../../assets/images/pastel-de-feira-de-queijo.jpg') },
-  { id: '3', title: 'Pizza', price: 'R$ 8,50', category: 'sabores', image: require('../../assets/images/pastel-pizza.png') },
-  { id: '4', title: 'Frango Catupiry', price: 'R$ 9,00', category: 'sabores', image: require('../../assets/images/pasteldefrangocomcatupiry.jpg') },
-  { id: '5', title: 'Palmito', price: 'R$ 8,50', category: 'sabores', image: require('../../assets/images/Pastel-dePalmitoCremoso.jpg') },
-  { id: '6', title: 'Brigadeiro', price: 'R$ 9,50', category: 'sabores', image: require('../../assets/images/pastelbrigadeiro.png') },
-  { id: '7', title: 'Doce de Leite', price: 'R$ 9,50', category: 'sabores', image: require('../../assets/images/pasteldocedeleite.png') },
-  { id: '8', title: 'Caldo. C 300ml', price: 'R$ 6,00', category: 'bebidas', image: require('../../assets/images/CaldodeCana300ml.png') },
-  { id: '9', title: 'Caldo. C 500ml', price: 'R$ 8,00', category: 'bebidas', image: require('../../assets/images/caldodecarna500ml.jpg') },
-  { id: '10', title: 'Água Mineral', price: 'R$ 4,00', category: 'bebidas', image: require('../../assets/images/aguamineral.jpg') },
-  { id: '11', title: 'Refri. Lata', price: 'R$ 5,00', category: 'bebidas', image: require('../../assets/images/refrigerantecoca.png') },
+const TABS = [
+  { id: 'sabores', title: 'Sabores', icon: 'fastfood' },
+  { id: 'bebidas', title: 'Bebidas', icon: 'local-drink' },
 ];
 
-interface MenuItemProps {
-  item: MenuItemData;
-  onPress: () => void;
-  isSelected: boolean;
-}
-
-const MenuItem = ({ item, onPress, isSelected }: MenuItemProps) => (
-  <TouchableOpacity onPress={onPress} style={[styles.itemContainer, isSelected && styles.itemSelected]}>
-    {item.image && <Image source={item.image} style={styles.itemImage} />}
-    <View style={styles.itemTextWrap}>
-      <Text style={styles.itemTitle}>{item.title}</Text>
-      <Text style={styles.itemPrice}>{item.price}</Text>
-    </View>
-  </TouchableOpacity>
-);
-
 export default function Menu() {
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const { state, addToCart } = useCart();
   const [activeTab, setActiveTab] = useState<'sabores' | 'bebidas'>('sabores');
 
-  // Animated values for tab icons
   const saboresScale = useSharedValue(activeTab === 'sabores' ? 1.12 : 1);
   const bebidasScale = useSharedValue(activeTab === 'bebidas' ? 1.12 : 1);
 
+  const animatedStyles = {
+    sabores: useAnimatedStyle(() => ({
+      transform: [{ scale: saboresScale.value }],
+    })),
+    bebidas: useAnimatedStyle(() => ({
+      transform: [{ scale: bebidasScale.value }],
+    })),
+  };
+
   useEffect(() => {
-    // pulse the active icon slightly and return others to normal
     if (activeTab === 'sabores') {
       saboresScale.value = withSpring(1.12, { damping: 6 });
       bebidasScale.value = withSpring(1, { damping: 8 });
@@ -61,82 +39,64 @@ export default function Menu() {
       bebidasScale.value = withSpring(1.12, { damping: 6 });
       saboresScale.value = withSpring(1, { damping: 8 });
     }
-  }, [activeTab]);
-
-  const saboresAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: saboresScale.value }],
-    };
-  });
-
-  const bebidasAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: bebidasScale.value }],
-    };
-  });
+  }, [activeTab, saboresScale, bebidasScale]);
 
   const filteredData = menuData.filter((m) => m.category === activeTab);
 
-  const handleSelectItem = (itemId: string) => {
-    setSelectedItems(prevSelectedItems => {
-      if (prevSelectedItems.includes(itemId)) {
-        return prevSelectedItems.filter(id => id !== itemId);
-      } else {
-        return [...prevSelectedItems, itemId];
-      }
-    });
+  const handleSelectItem = (item: MenuItemData) => {
+    const priceNumber = parseFloat(item.price.replace('R$ ', '').replace(',', '.'));
+    addToCart({ id: item.id, name: item.title, price: priceNumber });
   };
 
   const handlePlaceOrder = () => {
-    if (selectedItems.length === 0) {
+    if (state.items.length === 0) {
       Alert.alert('Nenhum item selecionado', 'Por favor, selecione ao menos um item para fazer o pedido.');
       return;
     }
+    router.push('/pagamento');
+  };
 
-    router.push({
-      pathname: '/pagamento',
-      params: { selectedItems: JSON.stringify(selectedItems) },
-    });
+  const isItemSelected = (itemId: string) => {
+    return state.items.some((item) => item.id === itemId);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.headerTitle}>Menu</Text>
       <View style={styles.tabsContainer}>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'sabores' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('sabores')}
-          accessibilityLabel="Sabores"
-        >
-          <MotiView style={saboresAnimatedStyle}>
-            <MaterialIcons name="fastfood" size={26} color={activeTab === 'sabores' ? '#fff' : '#ff7a3d'} />
-          </MotiView>
-          <Text style={[styles.tabLabel, activeTab === 'sabores' && styles.tabLabelActive]}>Sabores</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'bebidas' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('bebidas')}
-          accessibilityLabel="Bebidas"
-        >
-          <MotiView style={bebidasAnimatedStyle}>
-            <MaterialIcons name="local-drink" size={26} color={activeTab === 'bebidas' ? '#fff' : '#ff7a3d'} />
-          </MotiView>
-          <Text style={[styles.tabLabel, activeTab === 'bebidas' && styles.tabLabelActive]}>Bebidas</Text>
-        </TouchableOpacity>
+        {TABS.map((tab) => (
+          <TouchableOpacity
+            key={tab.id}
+            style={[styles.tabButton, activeTab === tab.id && styles.tabButtonActive]}
+            onPress={() => setActiveTab(tab.id as 'sabores' | 'bebidas')}
+            accessibilityLabel={tab.title}
+          >
+            <MotiView style={animatedStyles[tab.id as keyof typeof animatedStyles]}>
+              <MaterialIcons
+                name={tab.icon as any}
+                size={26}
+                color={activeTab === tab.id ? '#fff' : '#ff7a3d'}
+              />
+            </MotiView>
+            <Text style={[styles.tabLabel, activeTab === tab.id && styles.tabLabelActive]}>
+              {tab.title}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
       <FlatList
         data={filteredData}
         renderItem={({ item }) => (
           <MenuItem
             item={item}
-            onPress={() => handleSelectItem(item.id)}
-            isSelected={selectedItems.includes(item.id)}
+            onPress={() => handleSelectItem(item)}
+            isSelected={isItemSelected(item.id)}
           />
         )}
         keyExtractor={(item) => item.id}
         style={styles.list}
         contentContainerStyle={styles.listContent}
-        extraData={selectedItems}
+        extraData={state.items}
       />
       <View style={styles.buttonContainer}>
         <TouchableOpacity
@@ -146,7 +106,9 @@ export default function Menu() {
           activeOpacity={0.9}
         >
           <MaterialIcons name="shopping-cart" size={22} color="#fff" />
-          <Text style={styles.finalizeButtonText}>🧾 Finalizar Pedido ({selectedItems.length})</Text>
+          <Text style={styles.finalizeButtonText}>
+            🧾 Finalizar Pedido ({state.items.reduce((acc, item) => acc + item.quantity, 0)})
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -158,61 +120,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ecd595ff',
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginVertical: 20,
-    textAlign: 'center',
-    color: '#080808ff',
-  },
-  list: {
-    width: '100%',
-  },
-  itemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 12,
-    width: '90%',
-    alignSelf: 'center',
-    backgroundColor: '#ffffff',
-    marginVertical: 8,
-    borderRadius: 12,
-    // shadow
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-  },
-  itemSelected: {
-    backgroundColor: '#ffe9d6',
-    borderColor: '#f73d04',
-    borderWidth: 1,
-  },
-  itemTitle: {
-    fontSize: 18,
-  },
-  itemPrice: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111',
-    backgroundColor: '#f3d8b0',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  itemImage: {
-    width: 96,
-    height: 96,
-    borderRadius: 10,
-    marginRight: 16,
-  },
-  itemTextWrap: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
   headerTitle: {
     fontSize: 28,
     fontWeight: '800',
@@ -221,13 +128,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: '#3b2f2f',
   },
-  listContent: {
-    paddingBottom: 10,
-  },
-  buttonContainer: {
-    padding: 20,
-    backgroundColor: '#ecd595ff',
-  },
   tabsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -235,6 +135,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ecd595ff',
   },
   tabButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 6,
     paddingHorizontal: 18,
     borderRadius: 20,
@@ -253,8 +155,15 @@ const styles = StyleSheet.create({
   tabLabelActive: {
     color: '#fff',
   },
-  tabIcon: {
-    marginRight: 4,
+  list: {
+    width: '100%',
+  },
+  listContent: {
+    paddingBottom: 10,
+  },
+  buttonContainer: {
+    padding: 20,
+    backgroundColor: '#ecd595ff',
   },
   finalizeButton: {
     backgroundColor: '#f73d04',
