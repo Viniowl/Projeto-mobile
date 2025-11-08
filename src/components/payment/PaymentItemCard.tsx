@@ -1,7 +1,7 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { CartItem } from '../context/CartContext';
+import { CartItem } from '../../context/CartContext';
 
 type PaymentItemCardProps = {
   item: CartItem;
@@ -22,11 +22,11 @@ export function PaymentItemCard({ item, onIncrease, onDecrease, isSmall }: Payme
 
       <View style={styles.quantityRow}>
         <View style={styles.quantityControls}>
-          <TouchableOpacity style={[styles.qtyButton, isSmall && styles.qtyButtonSmall]} onPress={() => onDecrease(item.id)} accessibilityLabel={`Remover ${item.title}`}>
+          <TouchableOpacity style={[styles.qtyButton, isSmall && styles.qtyButtonSmall]} onPress={() => onDecrease(item.id)} accessibilityLabel={`Remover ${item.name}`}>
             <MaterialIcons name="remove" size={18} color="#fff" />
           </TouchableOpacity>
           <Text style={[styles.qtyText, isSmall && styles.qtyTextSmall]}>{item.quantity}</Text>
-          <TouchableOpacity style={[styles.qtyButton, isSmall && styles.qtyButtonSmall]} onPress={() => onIncrease(item.id)} accessibilityLabel={`Adicionar ${item.title}`}>
+          <TouchableOpacity style={[styles.qtyButton, isSmall && styles.qtyButtonSmall]} onPress={() => onIncrease(item.id)} accessibilityLabel={`Adicionar ${item.name}`}>
             <MaterialIcons name="add" size={18} color="#fff" />
           </TouchableOpacity>
         </View>

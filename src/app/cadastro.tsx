@@ -2,20 +2,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
-  Animated,
-  Keyboard,
-  KeyboardAvoidingView,
-  KeyboardTypeOptions,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
+  Alert, Animated, Keyboard, KeyboardAvoidingView,
+  KeyboardTypeOptions, Platform, ScrollView, StyleSheet,
+  Text, TextInput, TouchableOpacity, TouchableWithoutFeedback,
+  View, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type InputProps = {

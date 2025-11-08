@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { MenuItemData } from '../data/menuData';
+import { MenuItemData } from '../../data/menuData';
 
 interface MenuItemProps {
   item: MenuItemData;
