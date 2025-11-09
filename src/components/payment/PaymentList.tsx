@@ -1,7 +1,7 @@
 import React from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
-import PaymentItemCard from './PaymentItemCard';
+import { FlatList, StyleSheet } from 'react-native';
 import { CartItem } from '../../context/CartContext';
+import { PaymentItemCard } from './PaymentItemCard';
 
 interface PaymentListProps {
   items: CartItem[];

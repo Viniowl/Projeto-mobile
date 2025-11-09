@@ -5,8 +5,10 @@ import {
   Alert, Animated, Keyboard, KeyboardAvoidingView,
   KeyboardTypeOptions, Platform, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, TouchableWithoutFeedback,
-  View, } from 'react-native';
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { registerUser } from '../../services/api'; // 1. Importamos a função da API
 
 type InputProps = {
   icon: React.ComponentProps<typeof MaterialIcons>['name'];
@@ -15,9 +17,10 @@ type InputProps = {
   onChangeText: (text: string) => void;
   keyboardType?: KeyboardTypeOptions;
   accessibilityLabel: string;
+  secureTextEntry?: boolean;
 };
 
-const Input = ({ icon, placeholder, value, onChangeText, keyboardType, accessibilityLabel }: InputProps) => (
+const Input = ({ icon, placeholder, value, onChangeText, keyboardType, accessibilityLabel, secureTextEntry }: InputProps) => (
   <View style={styles.inputRow}>
     <MaterialIcons name={icon} size={20} color="#ff7a3d" accessibilityLabel={accessibilityLabel} />
     <TextInput
@@ -27,6 +30,7 @@ const Input = ({ icon, placeholder, value, onChangeText, keyboardType, accessibi
       onChangeText={onChangeText}
       keyboardType={keyboardType}
       placeholderTextColor="#6b6b6b"
+      secureTextEntry={secureTextEntry}
     />
   </View>
 );
@@ -35,6 +39,7 @@ export default function CadastroScreen() {
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
   const [endereco, setEndereco] = useState('');
+  const [senha, setSenha] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
 
   const logoScale = useRef(new Animated.Value(1)).current;
@@ -54,26 +59,36 @@ export default function CadastroScreen() {
     };
   }, [logoScale]);
 
-  const handleCadastro = () => {
-    if (!nome || !telefone || !endereco) {
+  // 2. Transformamos a função em async
+  const handleCadastro = async () => {
+    if (!nome || !telefone || !endereco || !senha) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos.');
       return;
     }
 
-    console.log('Dados do Cadastro:', { nome, telefone, endereco });
-    setShowSuccess(true);
-    Animated.timing(successAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+    try {
+      // 3. Chamamos a API com os dados do formulário
+      await registerUser({ nome, telefone, endereco, senha });
 
-    setNome('');
-    setTelefone('');
-    setEndereco('');
+      // Se a chamada acima for bem-sucedida, executamos a lógica de sucesso
+      setShowSuccess(true);
+      Animated.timing(successAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
 
-    setTimeout(() => {
-      Animated.timing(successAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
-        setShowSuccess(false);
-        router.push('/menu');
-      });
-    }, 1400);
+      setNome('');
+      setTelefone('');
+      setEndereco('');
+      setSenha('');
+
+      setTimeout(() => {
+        Animated.timing(successAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
+          setShowSuccess(false);
+          router.push('/menu'); // Navega para o menu após o sucesso
+        });
+      }, 1400);
+    } catch (error: any) {
+      // 4. Se a API retornar um erro, mostramos um alerta para o usuário
+      Alert.alert('Erro no Cadastro', error.message);
+    }
   };
 
   return (
@@ -114,6 +129,14 @@ export default function CadastroScreen() {
                 value={endereco}
                 onChangeText={setEndereco}
                 accessibilityLabel="ícone endereço"
+              />
+              <Input
+                icon="lock"
+                placeholder="Senha"
+                value={senha}
+                onChangeText={setSenha}
+                accessibilityLabel="ícone senha"
+                secureTextEntry={true}
               />
 
               <TouchableOpacity
@@ -185,7 +208,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     elevation: 6,
     maxWidth: 480,
-    marginTop: 8,
+    marginBottom: 10,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },

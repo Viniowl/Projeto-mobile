@@ -17,6 +17,12 @@ export default function Index(){
                         <Text style = {styles.buttonText}>Entrar como Convidado</Text>
                     </View>
                 </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress = {() => router.navigate("/login")}>
+                    <View style={styles.buttonContent}>
+                        <MaterialIcons name="login" size={20} color="#fff" style={styles.buttonIcon} />
+                        <Text style = {styles.buttonText}>Login</Text>
+                    </View>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.button}  onPress={() => router.navigate("/cadastro")}>
                     <View style={styles.buttonContent}>
                         <MaterialIcons name="person-add" size={20} color="#fff" style={styles.buttonIcon} />

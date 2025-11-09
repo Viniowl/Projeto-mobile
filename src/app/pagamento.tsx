@@ -2,18 +2,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  FlatList,
-  Keyboard,
-  LayoutAnimation,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  UIManager,
-  View,
-  useWindowDimensions,
+  Animated, FlatList, Keyboard,
+  LayoutAnimation, Platform, StyleSheet,
+  Text, TextInput, TouchableOpacity,
+  UIManager, View, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
