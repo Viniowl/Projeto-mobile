@@ -1,12 +1,26 @@
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import express from 'express'; 
+import express, { Request, Response, NextFunction } from 'express';
+import * as jwt from 'jsonwebtoken';
+import { AxiosError } from 'axios';
 
 const app = express();
 app.use(express.json());
 
 const prisma = new PrismaClient();
+
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error('JWT_SECRET não está definido nas variáveis de ambiente.');
+  process.exit(1);
+}
+
+// Interface para estender o Request do Express e adicionar a propriedade user
+interface AuthRequest extends Request {
+  user?: User;
+}
 
 app.post('/register', async (req, res) => {
   const { nome, telefone, endereco, senha } = req.body;
@@ -26,60 +40,6 @@ app.post('/register', async (req, res) => {
       },
     });
     res.status(201).json(user);
-
-    // --- INÍCIO DA LÓGICA DE SEEDING ---
-    // Esta lógica irá popular o banco com os dados do menu.
-    console.log('Iniciando o seeding do cardápio...');
-
-    // 1. Criar as categorias (se ainda não existirem)
-    await prisma.category.createMany({
-      data: [
-        { name: 'Sabores' },
-        { name: 'Bebidas' },
-      ],
-      skipDuplicates: true, // Não vai dar erro se as categorias já existirem
-    });
-
-    // 2. Buscar as categorias que acabamos de criar para pegar seus IDs
-    const saboresCategory = await prisma.category.findUnique({ where: { name: 'Sabores' } });
-    const bebidasCategory = await prisma.category.findUnique({ where: { name: 'Bebidas' } });
-
-    if (!saboresCategory || !bebidasCategory) {
-      console.error('Não foi possível encontrar as categorias para o seeding.');
-      return;
-    }
-
-    // 3. Definir os produtos (baseado no seu menuData.ts)
-    const productsToCreate = [
-      { name: 'Carne', price: 8.00, categoryId: saboresCategory.id },
-      { name: 'Queijo', price: 8.00, categoryId: saboresCategory.id },
-      { name: 'Pizza', price: 8.50, categoryId: saboresCategory.id },
-      { name: 'Frango Catupiry', price: 9.00, categoryId: saboresCategory.id },
-      { name: 'Palmito', price: 8.50, categoryId: saboresCategory.id },
-      { name: 'Brigadeiro', price: 9.50, categoryId: saboresCategory.id },
-      { name: 'Doce de Leite', price: 9.50, categoryId: saboresCategory.id },
-      { name: 'Caldo. C 300ml', price: 6.00, categoryId: bebidasCategory.id },
-      { name: 'Caldo. C 500ml', price: 8.00, categoryId: bebidasCategory.id },
-      { name: 'Água Mineral', price: 4.00, categoryId: bebidasCategory.id },
-      { name: 'Refri. Lata', price: 5.00, categoryId: bebidasCategory.id },
-    ];
-
-    // 4. Criar os produtos (se ainda não existirem)
-    // O Prisma não tem um "skipDuplicates" para createMany com todas as bases de dados,
-    // então vamos criar um por um e ignorar erros de duplicidade.
-    for (const productData of productsToCreate) {
-      try {
-        await prisma.product.create({
-          data: productData,
-        });
-      } catch (e) {
-        // Ignora o erro se o produto já existir (erro de constraint 'unique')
-        // Você pode adicionar uma verificação mais específica do erro se desejar.
-      }
-    }
-
-    console.log('Seeding do cardápio concluído.');
-    // --- FIM DA LÓGICA DE SEEDING ---
 
   } catch (error) {
     res.status(500).json({ error: 'Erro ao criar usuário.' });
@@ -105,52 +65,53 @@ app.post('/login', async (req, res) => {
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (passwordMatch) {
-      res.status(200).json({ message: 'Login bem-sucedido.' });
+      // Gera o token JWT
+      const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1d' }); // Token expira em 1 dia
+
+      // Retorna o token e os dados do usuário (sem a senha)
+      res.status(200).json({
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          telefone: user.telefone,
+        },
+      });
     } else {
       res.status(401).json({ error: 'Senha incorreta.' });
     }
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Erro ao fazer login.' });
   }
 });
 
+// Middleware de autenticação
+const authenticateToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Formato: "Bearer TOKEN"
+
+  if (token == null) {
+    return res.sendStatus(401); // Unauthorized
+  }
+
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as { userId: string };
+    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+
+    if (!user) {
+      return res.sendStatus(403); // Forbidden
+    }
+
+    req.user = user; // Anexa o usuário à requisição
+    next();
+  } catch (err) {
+    return res.sendStatus(403); // Forbidden
+  }
+};
+
+
 // --- ROTAS DO CARDÁPIO ---
-
-// ROTA PARA CRIAR UMA NOVA CATEGORIA (ex: "Sabores", "Bebidas")
-app.post('/categories', async (req, res) => {
-  const { name } = req.body;
-  if (!name) {
-    return res.status(400).json({ error: 'O nome da categoria é obrigatório.' });
-  }
-  try {
-    const category = await prisma.category.create({
-      data: { name },
-    });
-    res.status(201).json(category);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao criar categoria. O nome já pode existir.' });
-  }
-});
-
-// ROTA PARA CRIAR UM NOVO PRODUTO
-app.post('/products', async (req, res) => {
-  const { name, price, categoryId } = req.body;
-  if (!name || !price || !categoryId) {
-    return res.status(400).json({ error: 'Os campos name, price e categoryId são obrigatórios.' });
-  }
-  try {
-    const product = await prisma.product.create({
-      data: {
-        name,
-        price: parseFloat(price), // Converte o preço para número
-        categoryId,
-      },
-    });
-    res.status(201).json(product);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao criar produto. Verifique se o categoryId é válido.' });
-  }
-});
 
 // ROTA PARA LISTAR O CARDÁPIO COMPLETO (Categorias com seus produtos)
 app.get('/menu', async (req, res) => {
@@ -164,6 +125,89 @@ app.get('/menu', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Erro ao buscar o cardápio.' });
   }
+});
+
+// --- ROTAS DE PEDIDO ---
+
+// ROTA PARA CRIAR UM NOVO PEDIDO (protegida)
+app.post('/orders', authenticateToken, async (req: AuthRequest, res: Response) => {
+  const { items, total } = req.body;
+  const userId = req.user?.id;
+
+  if (!userId) {
+    return res.status(403).json({ error: 'Usuário não autenticado.' });
+  }
+
+  if (!items || !Array.isArray(items) || items.length === 0 || !total) {
+    return res.status(400).json({ error: 'Dados do pedido inválidos.' });
+  }
+  
+  const productIds = items.map((item: { id: string; quantity: number; price: number }) => item.id);
+
+  // 2. VALIDAR O USUÁRIO E OS PRODUTOS EM TRANSAÇÃO (melhor performance)
+  const [user, existingProducts] = await prisma.$transaction([
+      // A. Busca e valida o User
+      prisma.user.findUnique({
+          where: { id: userId },
+      }),
+      // B. Busca e valida os Products
+      prisma.product.findMany({
+          where: { id: { in: productIds } },
+      }),
+  ]);
+
+  // 3. VERIFICAÇÃO DE ERROS
+
+  if (!user) {
+      // Retorna 404 se o usuário não existir
+      console.error(`Erro: userId "${userId}" não encontrado.`);
+      return res.status(404).json({ error: 'Usuário não encontrado. O pedido requer um userId válido.' });
+  }
+
+  // Verifica se a contagem de produtos existentes é igual à contagem de IDs fornecidos
+  if (existingProducts.length !== productIds.length) {
+      // Calcula quais IDs estão faltando para detalhar o erro
+      const existingIds = new Set(existingProducts.map(p => p.id));
+      const missingIds = productIds.filter(id => !existingIds.has(id));
+
+      console.error(`Erro: Um ou mais produtos não foram encontrados: ${missingIds.join(', ')}`);
+      return res.status(404).json({
+          error: 'Um ou mais itens do pedido fazem referência a produtos inexistentes.',
+          missingProductIds: missingIds,
+      });
+  }
+
+  try {
+    // Cria o pedido e os itens do pedido em uma única transação
+    const order = await prisma.order.create({
+      data: {
+        total,
+        userId,
+        items: {
+          create: items.map((item: { id: string; quantity: number; price: number }) => ({
+            productId: item.id,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+        },
+      },
+      include: {
+        items: true, // Inclui os itens no retorno
+      },
+    });
+
+    res.status(201).json(order);
+  } catch (error) {
+    console.error("Erro ao criar pedido:", error);
+    let details = 'Erro desconhecido';
+      if (error instanceof AxiosError) {
+        details = error.response?.data || error.message;
+      } else if (error instanceof Error) {
+        details = error.message;
+      }
+      res.status(500).json({ error: 'Não foi possível criar o pedido.', details });
+
+    }
 });
 
 

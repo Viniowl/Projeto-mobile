@@ -15,9 +15,10 @@ model User {
   name      String
   telefone  String   @unique
   password  String
-  endereco  String? 
+  endereco  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  orders    Order[] // Relation to Order model
 }
 
 model Category {
@@ -27,9 +28,32 @@ model Category {
 }
 
 model Product {
-  id          String   @id @default(uuid())
-  name        String
+  id          String      @id @default(uuid())
+  name        String @unique
   price       Float
-  category    Category @relation(fields: [categoryId], references: [id])
+  category    Category    @relation(fields: [categoryId], references: [id])
   categoryId  String
+  orderItems  OrderItem[] // Relation to OrderItem model
+}
+
+// New Order model
+model Order {
+  id        String      @id @default(uuid())
+  createdAt DateTime    @default(now())
+  status    String      @default("PENDING") // e.g., PENDING, COMPLETED, CANCELED
+  total     Float
+  user      User        @relation(fields: [userId], references: [id])
+  userId    String
+  items     OrderItem[]
+}
+
+// New OrderItem model
+model OrderItem {
+  id        String  @id @default(uuid())
+  quantity  Int
+  price     Float // Price of the product at the time of order
+  order     Order   @relation(fields: [orderId], references: [id])
+  orderId   String
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
 }

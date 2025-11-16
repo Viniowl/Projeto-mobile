@@ -1,6 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
   Animated, FlatList, Keyboard,
   LayoutAnimation, Platform, StyleSheet,
@@ -12,8 +12,10 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AddItemModal } from '../components/menu/AddItemModal';
 import { Notification } from '../components/menu/Notification';
 import { PaymentItemCard } from '../components/payment/PaymentItemCard';
+import { AuthContext } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { menuData, MenuItemData } from '../data/menuData';
+import api from '../../services/api';
 
 const parsePrice = (price: string): number => {
   return parseFloat(price.replace('R$ ', '').replace(',', '.'));
@@ -27,6 +29,7 @@ export default function PagamentoScreen() {
     decreaseFromCart,
     clearCart,
   } = useCart();
+  const { user } = useContext(AuthContext);
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -73,7 +76,7 @@ export default function PagamentoScreen() {
         setNotification(null);
         if (type === 'success') {
           clearCart();
-          router.replace('/');
+          router.replace('/menu');
         }
       });
     }, duration);
@@ -106,9 +109,14 @@ export default function PagamentoScreen() {
     ]).start();
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (!paymentMethod) {
       showNotification('Por favor, selecione uma forma de pagamento.', 'error');
+      return;
+    }
+
+    if (!user) {
+      showNotification('Você precisa estar logado para fazer um pedido.', 'error');
       return;
     }
 
@@ -124,7 +132,24 @@ export default function PagamentoScreen() {
       message = `Pagamento de R$ ${total.toFixed(2).replace('.', ',')} em dinheiro confirmado. Seu troco é de R$ ${change.toFixed(2).replace('.', ',')}.`;
     }
 
-    showNotification(message, 'success');
+    const orderData = {
+      items: items.map(item => ({
+        id: item.id, // O backend espera o ID do produto
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      total,
+      paymentMethod,
+      userId: user.id,
+    };
+
+    try {
+      await api.post('/orders', orderData);
+      showNotification(message, 'success');
+    } catch (error) {
+      console.error('Erro ao criar pedido:', error);
+      showNotification('Erro ao processar o pedido. Tente novamente.', 'error');
+    }
   };
 
   const handleAddItem = (item: MenuItemData) => {

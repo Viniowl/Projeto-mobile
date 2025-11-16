@@ -1,6 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
     Alert, Keyboard, KeyboardAvoidingView,
     KeyboardTypeOptions, Platform, StyleSheet,
@@ -8,7 +8,7 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { loginUser } from '../../services/api'; // Importa a nova função de login
+import { AuthContext } from '../context/AuthContext';
 
 type InputProps = {
   icon: React.ComponentProps<typeof MaterialIcons>['name'];
@@ -54,26 +54,24 @@ const Input = ({ icon, placeholder, value, onChangeText, keyboardType, secureTex
 export default function LoginScreen() {
   const [telefone, setTelefone] = useState('');
   const [senha, setSenha] = useState('');
+  const { login } = useContext(AuthContext);
 
   const handleLogin = async () => {
-    if (!telefone || !senha) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
-      return;
-    }
+  const trimmedTelefone = telefone.trim();
+  const trimmedSenha = senha.trim();
+
+  if (!trimmedTelefone || !trimmedSenha) {
+       Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+       return;
+     }
+    
 
     try {
-      // Chama a função da API com os dados do formulário
-      const result = await loginUser({ telefone, senha });
-
-      // Se o login for bem-sucedido, o backend retorna uma mensagem.
-      Alert.alert('Sucesso!', result.message);
-
-      // Navega para a tela de menu após o login
+      await login(trimmedTelefone, trimmedSenha);
       router.push('/menu');
 
     } catch (error: any) {
-      // Se a API retornar um erro (ex: senha incorreta), mostramos um alerta
-      Alert.alert('Erro no Login', error.message);
+      Alert.alert('Erro no Login', error.message || 'Ocorreu um erro.');
     }
   };
 
