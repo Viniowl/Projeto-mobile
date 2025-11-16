@@ -20,20 +20,37 @@ type InputProps = {
   secureTextEntry?: boolean;
 };
 
-const Input = ({ icon, placeholder, value, onChangeText, keyboardType, accessibilityLabel, secureTextEntry }: InputProps) => (
-  <View style={styles.inputRow}>
-    <MaterialIcons name={icon} size={20} color="#ff7a3d" accessibilityLabel={accessibilityLabel} />
-    <TextInput
-      style={styles.inputField}
-      placeholder={placeholder}
-      value={value}
-      onChangeText={onChangeText}
-      keyboardType={keyboardType}
-      placeholderTextColor="#6b6b6b"
-      secureTextEntry={secureTextEntry}
-    />
-  </View>
-);
+const Input = ({ icon, placeholder, value, onChangeText, keyboardType, accessibilityLabel, secureTextEntry }: InputProps) => {
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible);
+  };
+
+  return (
+    <View style={styles.inputRow}>
+      <MaterialIcons name={icon} size={20} color="#ff7a3d" accessibilityLabel={accessibilityLabel} />
+      <TextInput
+        style={styles.inputField}
+        placeholder={placeholder}
+        value={value}
+        onChangeText={onChangeText}
+        keyboardType={keyboardType}
+        placeholderTextColor="#6b6b6b"
+        secureTextEntry={secureTextEntry && !isPasswordVisible}
+      />
+      {secureTextEntry && (
+        <TouchableOpacity onPress={togglePasswordVisibility}>
+          <MaterialIcons
+            name={isPasswordVisible ? 'visibility-off' : 'visibility'}
+            size={20}
+            color="#ff7a3d"
+          />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
 
 export default function CadastroScreen() {
   const [nome, setNome] = useState('');

@@ -1,5 +1,5 @@
 // URL pública fornecida pelo túnel do Expo.
-const BASE_URL = 'https://SUA-URL-DO-TUNEL-AQUI.tunnel.dev'; // <-- COLE A SUA URL DO TÚNEL AQUI
+const BASE_URL = 'http://192.168.0.3:3000'; // <-- COLE A SUA URL DO TÚNEL AQUI
 
 // Define um tipo para os dados do usuário que vamos enviar
 interface RegisterUserData {

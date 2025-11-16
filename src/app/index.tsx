@@ -1,6 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { BackHandler, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index(){
@@ -28,6 +28,9 @@ export default function Index(){
                         <MaterialIcons name="person-add" size={20} color="#fff" style={styles.buttonIcon} />
                         <Text style = {styles.buttonText}>Faça seu Cadastro</Text>
                     </View>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button} onPress={() => BackHandler.exitApp()}>
+                    <Text style = {styles.buttonText}>Sair do Aplicativo</Text>
                 </TouchableOpacity>  
             </View>
         </SafeAreaView>
