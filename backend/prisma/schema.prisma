@@ -52,6 +52,8 @@ model OrderItem {
   id        String  @id @default(uuid())
   quantity  Int
   price     Float // Price of the product at the time of order
+  productName String @default("Produto Desconhecido")
+  userName  String  @default("Usuário Desconhecido")
   order     Order   @relation(fields: [orderId], references: [id])
   orderId   String
   product   Product @relation(fields: [productId], references: [id])

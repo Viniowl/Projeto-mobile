@@ -1,6 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext,useEffect, useRef, useState } from 'react';
 import {
   Alert, Animated, Keyboard, KeyboardAvoidingView,
   KeyboardTypeOptions, Platform, ScrollView, StyleSheet,
@@ -8,7 +8,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { registerUser } from '../../services/api'; // 1. Importamos a função da API
+import { AuthContext } from '../context/AuthContext';
+import api from '../../services/api';
 
 type InputProps = {
   icon: React.ComponentProps<typeof MaterialIcons>['name'];
@@ -53,6 +54,7 @@ const Input = ({ icon, placeholder, value, onChangeText, keyboardType, accessibi
 };
 
 export default function CadastroScreen() {
+  const { login } = useContext(AuthContext);
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
   const [endereco, setEndereco] = useState('');
@@ -76,7 +78,6 @@ export default function CadastroScreen() {
     };
   }, [logoScale]);
 
-  // 2. Transformamos a função em async
   const handleCadastro = async () => {
     if (!nome || !telefone || !endereco || !senha) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos.');
@@ -84,27 +85,25 @@ export default function CadastroScreen() {
     }
 
     try {
-      // 3. Chamamos a API com os dados do formulário
-      await registerUser({ nome, telefone, endereco, senha });
+      // 1. Registra o novo usuário
+      await api.post('/register', { nome, telefone, endereco, senha });
 
-      // Se a chamada acima for bem-sucedida, executamos a lógica de sucesso
+      // 2. Faz o login para obter o token
+      await login(telefone, senha);
+
+      // 3. Mostra a animação de sucesso e navega
       setShowSuccess(true);
       Animated.timing(successAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
-
-      setNome('');
-      setTelefone('');
-      setEndereco('');
-      setSenha('');
 
       setTimeout(() => {
         Animated.timing(successAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
           setShowSuccess(false);
-          router.push('/menu'); // Navega para o menu após o sucesso
+          router.push('/menu');
         });
       }, 1400);
     } catch (error: any) {
-      // 4. Se a API retornar um erro, mostramos um alerta para o usuário
-      Alert.alert('Erro no Cadastro', error.message);
+      const errorMessage = error.response?.data?.error || 'Ocorreu um erro ao cadastrar.';
+      Alert.alert('Erro no Cadastro', errorMessage);
     }
   };
 

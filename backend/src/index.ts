@@ -4,8 +4,10 @@ import * as bcrypt from 'bcrypt';
 import express, { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { AxiosError } from 'axios';
+import cors from 'cors';
 
 const app = express();
+app.use(cors()); // Adiciona o middleware do CORS
 app.use(express.json());
 
 const prisma = new PrismaClient();

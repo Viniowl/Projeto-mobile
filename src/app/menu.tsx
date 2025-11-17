@@ -2,13 +2,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { MotiView } from 'moti';
 import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MenuItem } from '../components/menu/MenuItem';
 import { useCart } from '../context/CartContext';
-import { menuData, MenuItemData } from '../data/menuData';
+import { useMenu, Product } from '../context/MenuContext';
 
 const TABS = [
   { id: 'sabores', title: 'Sabores', icon: 'fastfood' },
@@ -17,6 +17,7 @@ const TABS = [
 
 export default function Menu() {
   const { state, addToCart } = useCart();
+  const { menu, loading, error } = useMenu();
   const [activeTab, setActiveTab] = useState<'sabores' | 'bebidas'>('sabores');
 
   const saboresScale = useSharedValue(activeTab === 'sabores' ? 1.12 : 1);
@@ -41,11 +42,14 @@ export default function Menu() {
     }
   }, [activeTab, saboresScale, bebidasScale]);
 
-  const filteredData = menuData.filter((m) => m.category === activeTab);
+  const activeCategory = menu.find(
+    (category) => category.name.toLowerCase() === activeTab.toLowerCase()
+  );
 
-  const handleSelectItem = (item: MenuItemData) => {
-    const priceNumber = parseFloat(item.price.replace('R$ ', '').replace(',', '.'));
-    addToCart({ id: item.id, name: item.title, price: priceNumber });
+  const filteredData = activeCategory ? activeCategory.products : [];
+
+  const handleSelectItem = (item: Product) => {
+    addToCart({ id: item.id, name: item.name, price: item.price });
   };
 
   const handlePlaceOrder = () => {
@@ -59,6 +63,23 @@ export default function Menu() {
   const isItemSelected = (itemId: string) => {
     return state.items.some((item) => item.id === itemId);
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color="#f73d04" />
+        <Text>Carregando cardápio...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={[styles.container, styles.center]}>
+        <Text style={styles.errorText}>Erro ao carregar o cardápio.</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -119,6 +140,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ecd595ff',
+  },
+  center: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
   },
   headerTitle: {
     fontSize: 28,

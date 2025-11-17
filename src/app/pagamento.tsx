@@ -14,12 +14,8 @@ import { Notification } from '../components/menu/Notification';
 import { PaymentItemCard } from '../components/payment/PaymentItemCard';
 import { AuthContext } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { menuData, MenuItemData } from '../data/menuData';
+import { Product, useMenu } from '../context/MenuContext';
 import api from '../../services/api';
-
-const parsePrice = (price: string): number => {
-  return parseFloat(price.replace('R$ ', '').replace(',', '.'));
-};
 
 export default function PagamentoScreen() {
   const insets = useSafeAreaInsets();
@@ -30,6 +26,7 @@ export default function PagamentoScreen() {
     clearCart,
   } = useCart();
   const { user } = useContext(AuthContext);
+  const { menu } = useMenu();
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -88,9 +85,14 @@ export default function PagamentoScreen() {
 
   const handleIncrease = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    const item = menuData.find((i) => i.id === id);
-    if (item) {
-      addToCart({ id: item.id, name: item.title, price: parsePrice(item.price) });
+    let itemFound;
+    for (const category of menu) {
+      itemFound = category.products.find((i) => i.id === id);
+      if (itemFound) break;
+    }
+
+    if (itemFound) {
+      addToCart({ id: itemFound.id, name: itemFound.name, price: itemFound.price });
     }
     const a = animRefs.current[id] || (animRefs.current[id] = new Animated.Value(1));
     Animated.sequence([
@@ -124,6 +126,10 @@ export default function PagamentoScreen() {
 
     if (paymentMethod === 'dinheiro') {
       const cash = parseFloat(cashAmount.replace(',', '.')) || 0;
+      if (isNaN(cash) || cash <= 0) {
+        showNotification('Por favor, insira um valor válido para o pagamento em dinheiro.', 'error');
+        return;
+      }
       if (cash < total) {
         showNotification('O valor em dinheiro é menor que o total do pedido.', 'error');
         return;
@@ -152,8 +158,8 @@ export default function PagamentoScreen() {
     }
   };
 
-  const handleAddItem = (item: MenuItemData) => {
-    addToCart({ id: item.id, name: item.title, price: parsePrice(item.price) });
+  const handleAddItem = (item: Product) => {
+    addToCart({ id: item.id, name: item.name, price: item.price });
   };
 
   const showCash = paymentMethod === 'dinheiro' && totalItemsCount > 0;
@@ -173,6 +179,7 @@ export default function PagamentoScreen() {
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onAddItem={handleAddItem}
+        menu={menu}
       />
       <FlatList
         keyboardShouldPersistTaps="handled"

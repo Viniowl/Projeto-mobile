@@ -1,14 +1,15 @@
 import React from 'react';
 import { Modal, View, Text, FlatList, TouchableOpacity, StyleSheet, Pressable, useWindowDimensions } from 'react-native';
-import { menuData, MenuItemData } from '../../data/menuData';
+import { Product, MenuCategory } from '../../context/MenuContext';
 
 interface AddItemModalProps {
   visible: boolean;
   onClose: () => void;
-  onAddItem: (item: MenuItemData) => void;
+  onAddItem: (item: Product) => void;
+  menu: MenuCategory[];
 }
 
-export function AddItemModal({ visible, onClose, onAddItem }: AddItemModalProps) {
+export function AddItemModal({ visible, onClose, onAddItem, menu }: AddItemModalProps) {
   const { width, height } = useWindowDimensions();
   const isSmall = width < 360 || height < 700;
 
@@ -28,13 +29,13 @@ export function AddItemModal({ visible, onClose, onAddItem }: AddItemModalProps)
             </Pressable>
           </View>
           <FlatList
-            data={menuData}
+            data={menu.flatMap(category => category.products)}
             keyExtractor={(it) => it.id}
             renderItem={({ item }) => (
               <View style={styles.modalItem}>
                 <View>
-                  <Text style={styles.modalItemTitle}>{item.title}</Text>
-                  <Text style={styles.modalItemPrice}>{item.price}</Text>
+                  <Text style={styles.modalItemTitle}>{item.name}</Text>
+                  <Text style={styles.modalItemPrice}>R$ {item.price.toFixed(2).replace('.', ',')}</Text>
                 </View>
                 <TouchableOpacity
                   style={styles.modalAddButton}

@@ -1,9 +1,9 @@
 import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { MenuItemData } from '../../data/menuData';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Product } from '../../context/MenuContext';
 
 interface MenuItemProps {
-  item: MenuItemData;
+  item: Product;
   onPress: () => void;
   isSelected: boolean;
 }
@@ -11,10 +11,9 @@ interface MenuItemProps {
 export function MenuItem({ item, onPress, isSelected }: MenuItemProps) {
   return (
     <TouchableOpacity onPress={onPress} style={[styles.itemContainer, isSelected && styles.itemSelected]}>
-      {item.image && <Image source={item.image} style={styles.itemImage} />}
       <View style={styles.itemTextWrap}>
-        <Text style={styles.itemTitle}>{item.title}</Text>
-        <Text style={styles.itemPrice}>{item.price}</Text>
+        <Text style={styles.itemTitle}>{item.name}</Text>
+        <Text style={styles.itemPrice}>{`R$ ${item.price.toFixed(2)}`}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -52,12 +51,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 20,
-  },
-  itemImage: {
-    width: 96,
-    height: 96,
-    borderRadius: 10,
-    marginRight: 16,
   },
   itemTextWrap: {
     flex: 1,
