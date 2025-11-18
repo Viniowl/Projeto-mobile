@@ -180,6 +180,7 @@ app.post('/orders', authenticateToken, async (req: AuthRequest, res: Response) =
   }
 
   try {
+    const productMap = new Map(existingProducts.map(p => [p.id, p.name]));
     // Cria o pedido e os itens do pedido em uma única transação
     const order = await prisma.order.create({
       data: {
@@ -190,11 +191,18 @@ app.post('/orders', authenticateToken, async (req: AuthRequest, res: Response) =
             productId: item.id,
             quantity: item.quantity,
             price: item.price,
+            productName: productMap.get(item.id) || 'Produto Desconhecido',
+            userName: user.name,
           })),
         },
       },
       include: {
         items: true, // Inclui os itens no retorno
+        user: {
+          select: {
+            name: true,
+          }
+        }
       },
     });
 
