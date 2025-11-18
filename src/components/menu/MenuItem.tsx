@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Product } from '../../context/MenuContext';
 
 interface MenuItemProps {
@@ -11,6 +11,7 @@ interface MenuItemProps {
 export function MenuItem({ item, onPress, isSelected }: MenuItemProps) {
   return (
     <TouchableOpacity onPress={onPress} style={[styles.itemContainer, isSelected && styles.itemSelected]}>
+      {item.image && <Image source={item.image} style={styles.itemImage} />}
       <View style={styles.itemTextWrap}>
         <Text style={styles.itemTitle}>{item.name}</Text>
         <Text style={styles.itemPrice}>{`R$ ${item.price.toFixed(2)}`}</Text>
@@ -22,7 +23,7 @@ export function MenuItem({ item, onPress, isSelected }: MenuItemProps) {
 const styles = StyleSheet.create({
   itemContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center', // Alinhar itens verticalmente
     padding: 12,
     width: '90%',
     alignSelf: 'center',
@@ -39,6 +40,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffe9d6',
     borderColor: '#f73d04',
     borderWidth: 1,
+  },
+  itemImage: {
+    width: 70, // Tamanho fixo para a imagem
+    height: 70, // Tamanho fixo para a imagem
+    borderRadius: 8, // Borda arredondada para a imagem
+    marginRight: 12, // Espaçamento entre a imagem e o texto
   },
   itemTitle: {
     fontSize: 18,

@@ -1,5 +1,22 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import { ImageSourcePropType } from 'react-native';
 import api from '../../services/api';
+
+// Importar imagens
+// Mapeamento de nomes de produtos para imagens locais
+const productImageMap: { [key: string]: ImageSourcePropType } = {
+  'Água Mineral': require('../../assets/images/aguamineral.jpg'),
+  'Caldo. C 300ml': require('../../assets/images/CaldodeCana300ml.png'),
+  'Caldo. C 500ml': require('../../assets/images/caldodecarna500ml.jpg'),
+  'Queijo': require('../../assets/images/pastel-de-feira-de-queijo.jpg'),
+  'Palmito': require('../../assets/images/Pastel-dePalmitoCremoso.jpg'),
+  'Pizza': require('../../assets/images/pastel-pizza.png'),
+  'Brigadeiro': require('../../assets/images/pastelbrigadeiro.png'),
+  'Carne': require('../../assets/images/pasteldecarne.png'),
+  'Frango Catupiry': require('../../assets/images/pasteldefrangocomcatupiry.jpg'),
+  'Doce de Leite': require('../../assets/images/pasteldocedeleite.png'),
+  'Refri. Lata': require('../../assets/images/refrigerantecoca.png'),
+};
 
 // Interface para um único produto
 export interface Product {
@@ -7,6 +24,7 @@ export interface Product {
   name: string;
   price: number;
   categoryId: string;
+  image?: ImageSourcePropType; // Adicionando o campo de imagem
 }
 
 // Interface para uma categoria que contém produtos
@@ -38,7 +56,20 @@ export const MenuProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setError(null);
     try {
       const response = await api.get('/menu');
-      setMenu(response.data);
+      const menuData: MenuCategory[] = response.data;
+
+      // Atribuir imagens locais aos produtos
+      const menuWithImages = menuData.map((category) => ({
+        ...category,
+        products: category.products.map((product) => {
+          return {
+            ...product,
+            image: productImageMap[product.name] || undefined, // Atribui a imagem ou undefined se não encontrar
+          };
+        }),
+      }));
+
+      setMenu(menuWithImages);
     } catch (err) {
       setError('Não foi possível carregar o cardápio. Tente novamente mais tarde.');
       console.error('Failed to fetch menu:', err);
