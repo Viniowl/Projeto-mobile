@@ -1,8 +1,9 @@
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+
+// Contexto para gerenciar o cardápio (menu) e suas categorias/produtos.
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { ImageSourcePropType } from 'react-native';
 import api from '../../services/api';
 
-// Importar imagens
 // Mapeamento de nomes de produtos para imagens locais
 const productImageMap: { [key: string]: ImageSourcePropType } = {
   'Água Mineral': require('../../assets/images/aguamineral.jpg'),
@@ -24,7 +25,7 @@ export interface Product {
   name: string;
   price: number;
   categoryId: string;
-  image?: ImageSourcePropType; // Adicionando o campo de imagem
+  image?: ImageSourcePropType; // Campo de imagem local
 }
 
 // Interface para uma categoria que contém produtos
@@ -34,7 +35,7 @@ export interface MenuCategory {
   products: Product[];
 }
 
-// Interface para os dados do contexto
+// Interface para os dados e funções do contexto do menu
 interface MenuContextData {
   menu: MenuCategory[];
   loading: boolean;
@@ -42,15 +43,16 @@ interface MenuContextData {
   fetchMenu: () => void;
 }
 
-// Criar o contexto
+// Cria o contexto do menu
 const MenuContext = createContext<MenuContextData>({} as MenuContextData);
 
-// Criar o provider
+// Provider do contexto do menu
 export const MenuProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [menu, setMenu] = useState<MenuCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Função para buscar o cardápio do backend e atribuir imagens locais
   const fetchMenu = async () => {
     setLoading(true);
     setError(null);
@@ -79,6 +81,7 @@ export const MenuProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
+    // Busca o cardápio ao montar o componente
     fetchMenu();
   }, []);
 
@@ -89,7 +92,7 @@ export const MenuProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
-// Hook para usar o contexto
+// Hook para usar o contexto do menu
 export function useMenu() {
   const context = useContext(MenuContext);
   if (!context) {

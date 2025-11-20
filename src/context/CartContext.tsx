@@ -1,4 +1,6 @@
-import React, { createContext, useReducer, useContext, ReactNode } from 'react';
+
+// Contexto para gerenciar o estado do carrinho de compras.
+import React, { createContext, ReactNode, useContext, useReducer } from 'react';
 
 // Interface para os itens do carrinho
 export interface CartItem {
@@ -13,14 +15,14 @@ interface CartState {
   items: CartItem[];
 }
 
-// Interface para as ações do reducer
+// Tipos de ações possíveis no reducer do carrinho
 type CartAction =
   | { type: 'ADD_ITEM'; payload: Omit<CartItem, 'quantity'> }
   | { type: 'REMOVE_ITEM'; payload: { id: string } }
   | { type: 'DECREASE_ITEM'; payload: { id: string } }
   | { type: 'CLEAR_CART' };
 
-// Interface para o valor do contexto
+// Interface para o valor do contexto do carrinho
 interface CartContextType {
   state: CartState;
   addToCart: (item: Omit<CartItem, 'quantity'>) => void;
@@ -29,7 +31,7 @@ interface CartContextType {
   clearCart: () => void;
 }
 
-// Criando o contexto com um valor padrão undefined
+// Cria o contexto do carrinho
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 // Reducer para gerenciar o estado do carrinho
@@ -84,7 +86,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
   }
 };
 
-// Componente Provedor do Contexto
+// Provider do contexto do carrinho
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(cartReducer, { items: [] });
 

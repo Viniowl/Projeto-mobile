@@ -1,13 +1,16 @@
+// Componente que exibe um item do menu (produto) com imagem, nome e preço.
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Product } from '../../context/MenuContext';
 
+// Propriedades esperadas pelo MenuItem
 interface MenuItemProps {
   item: Product;
   onPress: () => void;
   isSelected: boolean;
 }
 
+// Renderiza card de produto do menu
 export function MenuItem({ item, onPress, isSelected }: MenuItemProps) {
   return (
     <TouchableOpacity onPress={onPress} style={[styles.itemContainer, isSelected && styles.itemSelected]}>
@@ -20,6 +23,7 @@ export function MenuItem({ item, onPress, isSelected }: MenuItemProps) {
   );
 }
 
+// Estilos para o card de item do menu
 const styles = StyleSheet.create({
   itemContainer: {
     flexDirection: 'row',

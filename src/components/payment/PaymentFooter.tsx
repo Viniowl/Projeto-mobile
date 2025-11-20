@@ -1,15 +1,19 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+// Componente que exibe o rodapé da tela de pagamento, com total e opções de forma de pagamento.
 import { MaterialIcons } from '@expo/vector-icons';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+// Tipos de forma de pagamento disponíveis
 type PaymentMethod = 'cartao' | 'pix' | 'dinheiro';
 
+// Propriedades esperadas pelo PaymentFooter
 interface PaymentFooterProps {
   total: number;
   paymentMethod: PaymentMethod | null;
   onSelectPaymentMethod: (method: PaymentMethod) => void;
 }
 
+// Renderiza rodapé com total e botões de forma de pagamento
 const PaymentFooter: React.FC<PaymentFooterProps> = ({ total, paymentMethod, onSelectPaymentMethod }) => {
   return (
     <>
@@ -48,6 +52,7 @@ const PaymentFooter: React.FC<PaymentFooterProps> = ({ total, paymentMethod, onS
   );
 };
 
+// Estilos para o rodapé de pagamento
 const styles = StyleSheet.create({
   totalContainer: {
     flexDirection: 'row',

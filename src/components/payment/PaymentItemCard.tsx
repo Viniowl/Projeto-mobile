@@ -1,8 +1,12 @@
+// Componente que exibe um item do carrinho na tela de pagamento.
+// Componente que exibe um item do carrinho na tela de pagamento.
 import { MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { CartItem } from '../../context/CartContext';
 
+// Propriedades esperadas pelo PaymentItemCard
+// Propriedades esperadas pelo PaymentItemCard
 type PaymentItemCardProps = {
   item: CartItem;
   onIncrease: (id: string) => void;
@@ -10,6 +14,8 @@ type PaymentItemCardProps = {
   isSmall: boolean;
 };
 
+// Renderiza card de item do carrinho com controles de quantidade
+// Renderiza card de item do carrinho com controles de quantidade
 export function PaymentItemCard({ item, onIncrease, onDecrease, isSmall }: PaymentItemCardProps) {
   return (
     <View style={[styles.itemCard, isSmall && styles.itemCardSmall]}>
@@ -36,6 +42,8 @@ export function PaymentItemCard({ item, onIncrease, onDecrease, isSmall }: Payme
   );
 }
 
+// Estilos para o card do item de pagamento
+// Estilos para o card do item de pagamento
 const styles = StyleSheet.create({
   itemCard: {
     backgroundColor: '#fff',

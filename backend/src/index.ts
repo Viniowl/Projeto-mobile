@@ -6,71 +6,90 @@ import * as jwt from 'jsonwebtoken';
 import { AxiosError } from 'axios';
 import cors from 'cors';
 
+// Inicializa o aplicativo Express
 const app = express();
-app.use(cors()); // Adiciona o middleware do CORS
+// Habilita o middleware CORS para permitir requisições de diferentes origens
+app.use(cors());
+// Habilita o middleware para parsear requisições com corpo JSON
 app.use(express.json());
 
+// Inicializa o cliente Prisma para interagir com o banco de dados
 const prisma = new PrismaClient();
 
+// Obtém o segredo JWT das variáveis de ambiente. Essencial para assinar e verificar tokens.
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// Verifica se a variável de ambiente JWT_SECRET está definida
 if (!JWT_SECRET) {
   console.error('JWT_SECRET não está definido nas variáveis de ambiente.');
+  // Encerra o processo se o segredo não estiver configurado, pois a aplicação não pode funcionar sem ele
   process.exit(1);
 }
 
-// Interface para estender o Request do Express e adicionar a propriedade user
+// Interface para estender o objeto Request do Express, adicionando uma propriedade 'user'
+// Isso permite que o middleware de autenticação anexe o usuário autenticado à requisição
 interface AuthRequest extends Request {
   user?: User;
 }
 
 app.post('/register', async (req, res) => {
+  // Extrai os dados do corpo da requisição
   const { nome, telefone, endereco, senha } = req.body;
 
+  // Validação básica: verifica se todos os campos obrigatórios foram fornecidos
   if (!nome || !telefone || !endereco || !senha) {
     return res.status(400).json({ error: 'Por favor, preencha todos os campos.' });
   }
 
   try {
+    // Gera um hash seguro da senha antes de armazená-la no banco de dados
     const hashedPassword = await bcrypt.hash(senha, 10);
+    // Cria um novo usuário no banco de dados com a senha hasheada
     const user = await prisma.user.create({
       data: {
         name: nome,
         telefone,
         endereco,
-        password: hashedPassword,
+        password: hashedPassword, // Armazena a senha hasheada
       },
     });
+    // Retorna o usuário criado com status 201 (Created)
     res.status(201).json(user);
 
   } catch (error) {
+    // Em caso de erro (ex: telefone já cadastrado), retorna um erro 500
     res.status(500).json({ error: 'Erro ao criar usuário.' });
   }
 });
 
 app.post('/login', async (req, res) => {
+  // Extrai telefone e senha do corpo da requisição
   const { telefone, password } = req.body;
 
+  // Validação básica: verifica se telefone e senha foram fornecidos
   if (!telefone || !password) {
     return res.status(400).json({ error: 'Por favor, preencha todos os campos.' });
   }
 
   try {
+    // Busca o usuário no banco de dados pelo telefone
     const user = await prisma.user.findUnique({
       where: { telefone },
     });
 
+    // Se o usuário não for encontrado, retorna erro 404
     if (!user) {
       return res.status(404).json({ error: 'Usuário não encontrado.' });
     }
 
+    // Compara a senha fornecida com a senha hasheada armazenada no banco de dados
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (passwordMatch) {
-      // Gera o token JWT
+      // Se as senhas coincidirem, gera um token JWT para o usuário
       const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1d' }); // Token expira em 1 dia
 
-      // Retorna o token e os dados do usuário (sem a senha)
+      // Retorna o token JWT e informações básicas do usuário (sem a senha)
       res.status(200).json({
         token,
         user: {
@@ -80,35 +99,47 @@ app.post('/login', async (req, res) => {
         },
       });
     } else {
+      // Se as senhas não coincidirem, retorna erro 401 (Unauthorized)
       res.status(401).json({ error: 'Senha incorreta.' });
     }
   } catch (error) {
     console.error(error);
+    // Em caso de erro no servidor, retorna erro 500
     res.status(500).json({ error: 'Erro ao fazer login.' });
   }
 });
 
 // Middleware de autenticação
+// Middleware de autenticação: verifica a presença e validade de um token JWT
 const authenticateToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  // Obtém o cabeçalho de autorização da requisição
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Formato: "Bearer TOKEN"
+  // Extrai o token do formato "Bearer TOKEN"
+  const token = authHeader && authHeader.split(' ')[1];
 
+  // Se não houver token, retorna 401 (Unauthorized)
   if (token == null) {
-    return res.sendStatus(401); // Unauthorized
+    return res.sendStatus(401);
   }
 
   try {
+    // Verifica e decodifica o token JWT usando o segredo
     const payload = jwt.verify(token, JWT_SECRET) as { userId: string };
+    // Busca o usuário no banco de dados com base no userId do payload
     const user = await prisma.user.findUnique({ where: { id: payload.userId } });
 
+    // Se o usuário não for encontrado, retorna 403 (Forbidden)
     if (!user) {
-      return res.sendStatus(403); // Forbidden
+      return res.sendStatus(403);
     }
 
-    req.user = user; // Anexa o usuário à requisição
+    // Anexa o objeto do usuário à requisição para uso posterior nas rotas
+    req.user = user;
+    // Continua para a próxima função middleware ou rota
     next();
   } catch (err) {
-    return res.sendStatus(403); // Forbidden
+    // Se o token for inválido ou expirado, retorna 403 (Forbidden)
+    return res.sendStatus(403);
   }
 };
 
@@ -118,13 +149,16 @@ const authenticateToken = async (req: AuthRequest, res: Response, next: NextFunc
 // ROTA PARA LISTAR O CARDÁPIO COMPLETO (Categorias com seus produtos)
 app.get('/menu', async (req, res) => {
   try {
+    // Busca todas as categorias e inclui os produtos associados a cada categoria
     const menu = await prisma.category.findMany({
       include: {
         products: true, // Inclui a lista de produtos dentro de cada categoria
       },
     });
+    // Retorna o cardápio completo com status 200 (OK)
     res.status(200).json(menu);
   } catch (error) {
+    // Em caso de erro, retorna erro 500
     res.status(500).json({ error: 'Erro ao buscar o cardápio.' });
   }
 });
@@ -132,21 +166,28 @@ app.get('/menu', async (req, res) => {
 // --- ROTAS DE PEDIDO ---
 
 // ROTA PARA CRIAR UM NOVO PEDIDO (protegida)
+// ROTA PARA CRIAR UM NOVO PEDIDO (protegida por autenticação)
 app.post('/orders', authenticateToken, async (req: AuthRequest, res: Response) => {
+  // Extrai os itens do pedido e o total do corpo da requisição
   const { items, total } = req.body;
+  // Obtém o ID do usuário autenticado a partir da requisição (anexado pelo middleware)
   const userId = req.user?.id;
 
+  // Verifica se o usuário está autenticado
   if (!userId) {
     return res.status(403).json({ error: 'Usuário não autenticado.' });
   }
 
+  // Validação dos dados do pedido: verifica se 'items' é um array não vazio e se 'total' existe
   if (!items || !Array.isArray(items) || items.length === 0 || !total) {
-    return res.status(400).json({ error: 'Dados do pedido inválidos.' });
+    return res.status(400).json({ error: 'Dados do pedido inválidos. Certifique-se de que "items" é um array com produtos e "total" está presente.' });
   }
   
+  // Extrai os IDs dos produtos dos itens do pedido
   const productIds = items.map((item: { id: string; quantity: number; price: number }) => item.id);
 
-  // 2. VALIDAR O USUÁRIO E OS PRODUTOS EM TRANSAÇÃO (melhor performance)
+  // Realiza uma transação para buscar e validar o usuário e os produtos simultaneamente
+  // Isso garante consistência e melhor performance
   const [user, existingProducts] = await prisma.$transaction([
       // A. Busca e valida o User
       prisma.user.findUnique({
@@ -160,15 +201,15 @@ app.post('/orders', authenticateToken, async (req: AuthRequest, res: Response) =
 
   // 3. VERIFICAÇÃO DE ERROS
 
+  // Se o usuário não for encontrado, retorna erro 404
   if (!user) {
-      // Retorna 404 se o usuário não existir
       console.error(`Erro: userId "${userId}" não encontrado.`);
       return res.status(404).json({ error: 'Usuário não encontrado. O pedido requer um userId válido.' });
   }
 
-  // Verifica se a contagem de produtos existentes é igual à contagem de IDs fornecidos
+  // Verifica se todos os produtos referenciados no pedido existem no banco de dados
   if (existingProducts.length !== productIds.length) {
-      // Calcula quais IDs estão faltando para detalhar o erro
+      // Identifica quais IDs de produtos estão faltando para fornecer um erro mais detalhado
       const existingIds = new Set(existingProducts.map(p => p.id));
       const missingIds = productIds.filter(id => !existingIds.has(id));
 
@@ -180,48 +221,55 @@ app.post('/orders', authenticateToken, async (req: AuthRequest, res: Response) =
   }
 
   try {
+    // Cria um mapa de IDs de produtos para seus nomes para facilitar a atribuição
     const productMap = new Map(existingProducts.map(p => [p.id, p.name]));
-    // Cria o pedido e os itens do pedido em uma única transação
+    // Cria o pedido e os itens do pedido em uma única operação transacional
     const order = await prisma.order.create({
       data: {
         total,
         userId,
+        // Cria os itens do pedido associados a este pedido
         items: {
           create: items.map((item: { id: string; quantity: number; price: number }) => ({
             productId: item.id,
             quantity: item.quantity,
             price: item.price,
-            productName: productMap.get(item.id) || 'Produto Desconhecido',
-            userName: user.name,
+            productName: productMap.get(item.id) || 'Produto Desconhecido', // Atribui o nome do produto
+            userName: user.name, // Atribui o nome do usuário ao item do pedido
           })),
         },
       },
       include: {
-        items: true, // Inclui os itens no retorno
+        items: true, // Inclui os itens do pedido no objeto de retorno
         user: {
           select: {
-            name: true,
+            name: true, // Inclui apenas o nome do usuário no objeto de retorno
           }
         }
       },
     });
 
+    // Retorna o pedido criado com status 201 (Created)
     res.status(201).json(order);
   } catch (error) {
     console.error("Erro ao criar pedido:", error);
     let details = 'Erro desconhecido';
+      // Tenta extrair detalhes do erro se for uma instância de AxiosError ou Error
       if (error instanceof AxiosError) {
         details = error.response?.data || error.message;
       } else if (error instanceof Error) {
         details = error.message;
       }
+      // Retorna erro 500 com detalhes
       res.status(500).json({ error: 'Não foi possível criar o pedido.', details });
 
     }
 });
 
 
+// Define a porta em que o servidor irá escutar. Usa a variável de ambiente PORT ou 3000 como padrão.
 const PORT = process.env.PORT || 3000;
+// Inicia o servidor e loga a porta em que está rodando
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

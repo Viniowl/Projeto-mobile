@@ -1,41 +1,57 @@
+// Importa ícones da biblioteca MaterialIcons para uso na interface.
 import { MaterialIcons } from '@expo/vector-icons';
+// Importa o hook router da expo-router para navegação entre telas.
 import { router } from 'expo-router';
+// Importa hooks do React para gerenciamento de estado, ciclo de vida e referências.
 import React, { useContext, useEffect, useRef, useState } from 'react';
+// Importa componentes do React Native para construir a interface do usuário.
 import {
   Animated, FlatList, Keyboard,
   LayoutAnimation, Platform, StyleSheet,
   Text, TextInput, TouchableOpacity,
   UIManager, View, useWindowDimensions,
 } from 'react-native';
+// Importa SafeAreaView e useSafeAreaInsets para lidar com áreas seguras do dispositivo.
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+// Importa componentes customizados.
 import { AddItemModal } from '../components/menu/AddItemModal';
 import { Notification } from '../components/menu/Notification';
 import { PaymentItemCard } from '../components/payment/PaymentItemCard';
+// Importa contextos para autenticação, carrinho e menu.
 import { AuthContext } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { Product, useMenu } from '../context/MenuContext';
+// Importa a instância do Axios configurada para fazer requisições à API.
 import api from '../../services/api';
 
+// Componente principal da tela de Pagamento.
 export default function PagamentoScreen() {
+  // Obtém as insets da área segura do dispositivo.
   const insets = useSafeAreaInsets();
+  // Obtém o estado do carrinho e funções de manipulação do carrinho.
   const {
     state: { items },
     addToCart,
     decreaseFromCart,
     clearCart,
   } = useCart();
+  // Obtém o usuário autenticado do contexto de autenticação.
   const { user } = useContext(AuthContext);
+  // Obtém os dados do menu do contexto do menu.
   const { menu } = useMenu();
 
+  // Calcula o total do pedido.
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+  // Estados para gerenciar a forma de pagamento, valor em dinheiro e visibilidade do modal.
   const [paymentMethod, setPaymentMethod] = useState<'cartao' | 'pix' | 'dinheiro' | null>(null);
-  const animRefs = useRef<Record<string, Animated.Value>>({});
-  const [cashAmount, setCashAmount] = useState('');
-  const [modalVisible, setModalVisible] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const animRefs = useRef<Record<string, Animated.Value>>({}); // Referências para animações de itens.
+  const [cashAmount, setCashAmount] = useState(''); // Valor inserido para pagamento em dinheiro.
+  const [modalVisible, setModalVisible] = useState(false); // Visibilidade do modal de adicionar item.
+  const [keyboardHeight, setKeyboardHeight] = useState(0); // Altura do teclado virtual.
 
+  // Estado e animação para notificações.
   const [notification, setNotification] = useState<{
     visible: boolean;
     message: string;
@@ -43,6 +59,7 @@ export default function PagamentoScreen() {
   } | null>(null);
   const notificationAnim = useRef(new Animated.Value(0)).current;
 
+  // Efeito para monitorar a altura do teclado e ajustar o layout.
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
       setKeyboardHeight(e.endCoordinates?.height || 0);
@@ -50,18 +67,21 @@ export default function PagamentoScreen() {
     const hideSub = Keyboard.addListener('keyboardDidHide', () => {
       setKeyboardHeight(0);
     });
+    // Remove os listeners ao desmontar o componente.
     return () => {
       showSub.remove();
       hideSub.remove();
     };
   }, []);
 
+  // Efeito para habilitar LayoutAnimation experimental no Android.
   useEffect(() => {
     if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
       UIManager.setLayoutAnimationEnabledExperimental(true);
     }
   }, []);
 
+  // Função para exibir notificações (sucesso/erro).
   const showNotification = (message: string, type: 'success' | 'error') => {
     setNotification({ visible: true, message, type });
     notificationAnim.setValue(0);
@@ -72,28 +92,33 @@ export default function PagamentoScreen() {
       Animated.timing(notificationAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
         setNotification(null);
         if (type === 'success') {
-          clearCart();
-          router.replace('/menu');
+          clearCart(); // Limpa o carrinho em caso de sucesso.
+          router.replace('/menu'); // Redireciona para o menu.
         }
       });
     }, duration);
   };
 
+  // Calcula a posição inferior da barra de checkout, considerando o teclado e as insets.
   const checkoutBottom = keyboardHeight > 0 ? keyboardHeight + (insets.bottom || 6) : (insets.bottom || 6) + 6;
 
+  // Calcula o número total de itens no carrinho.
   const totalItemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
+  // Função para aumentar a quantidade de um item no carrinho.
   const handleIncrease = (id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); // Anima a mudança de layout.
     let itemFound;
+    // Procura o item no menu para obter seus detalhes.
     for (const category of menu) {
       itemFound = category.products.find((i) => i.id === id);
       if (itemFound) break;
     }
 
     if (itemFound) {
-      addToCart({ id: itemFound.id, name: itemFound.name, price: itemFound.price });
+      addToCart({ id: itemFound.id, name: itemFound.name, price: itemFound.price }); // Adiciona ao carrinho.
     }
+    // Animação de escala para o item.
     const a = animRefs.current[id] || (animRefs.current[id] = new Animated.Value(1));
     Animated.sequence([
       Animated.timing(a, { toValue: 1.12, duration: 120, useNativeDriver: true }),
@@ -101,9 +126,11 @@ export default function PagamentoScreen() {
     ]).start();
   };
 
+  // Função para diminuir a quantidade de um item no carrinho.
   const handleDecrease = (id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    decreaseFromCart(id);
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); // Anima a mudança de layout.
+    decreaseFromCart(id); // Diminui a quantidade no carrinho.
+    // Animação de escala para o item.
     const a = animRefs.current[id] || (animRefs.current[id] = new Animated.Value(1));
     Animated.sequence([
       Animated.timing(a, { toValue: 0.9, duration: 100, useNativeDriver: true }),
@@ -111,12 +138,15 @@ export default function PagamentoScreen() {
     ]).start();
   };
 
+  // Função para processar o pagamento.
   const handlePayment = async () => {
+    // Validação da forma de pagamento.
     if (!paymentMethod) {
       showNotification('Por favor, selecione uma forma de pagamento.', 'error');
       return;
     }
 
+    // Validação do usuário logado.
     if (!user) {
       showNotification('Você precisa estar logado para fazer um pedido.', 'error');
       return;
@@ -124,6 +154,7 @@ export default function PagamentoScreen() {
 
     let message = `Pagamento de R$ ${total.toFixed(2).replace('.', ',')} confirmado com sucesso!`;
 
+    // Lógica específica para pagamento em dinheiro.
     if (paymentMethod === 'dinheiro') {
       const cash = parseFloat(cashAmount.replace(',', '.')) || 0;
       if (isNaN(cash) || cash <= 0) {
@@ -138,6 +169,7 @@ export default function PagamentoScreen() {
       message = `Pagamento de R$ ${total.toFixed(2).replace('.', ',')} em dinheiro confirmado. Seu troco é de R$ ${change.toFixed(2).replace('.', ',')}.`;
     }
 
+    // Dados do pedido a serem enviados para a API.
     const orderData = {
       items: items.map(item => ({
         id: item.id, // O backend espera o ID do produto
@@ -150,37 +182,45 @@ export default function PagamentoScreen() {
     };
 
     try {
+      // Envia o pedido para a API.
       await api.post('/orders', orderData);
-      showNotification(message, 'success');
+      showNotification(message, 'success'); // Exibe notificação de sucesso.
     } catch (error) {
       console.error('Erro ao criar pedido:', error);
-      showNotification('Erro ao processar o pedido. Tente novamente.', 'error');
+      showNotification('Erro ao processar o pedido. Tente novamente.', 'error'); // Exibe notificação de erro.
     }
   };
 
+  // Função para adicionar um item ao carrinho a partir do modal.
   const handleAddItem = (item: Product) => {
     addToCart({ id: item.id, name: item.name, price: item.price });
   };
 
+  // Condição para exibir o campo de valor em dinheiro.
   const showCash = paymentMethod === 'dinheiro' && totalItemsCount > 0;
 
+  // Obtém as dimensões da janela para responsividade.
   const { width, height } = useWindowDimensions();
-  const isSmall = width < 360 || height < 700;
-  const baseCheckoutHeight = showCash ? 110 : 80;
+  const isSmall = width < 360 || height < 700; // Verifica se a tela é pequena.
+  const baseCheckoutHeight = showCash ? 110 : 80; // Altura base da barra de checkout.
+  // Preenchimento inferior da lista, considerando a barra de checkout.
   const contentPaddingBottom = baseCheckoutHeight + (insets.bottom || 6) + 12;
 
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Resumo do Pedido</Text>
+      {/* Botão para abrir o modal de adicionar item. */}
       <TouchableOpacity style={styles.addItemButton} onPress={() => setModalVisible(true)}>
         <Text style={styles.addItemButtonText}>+ Adicionar item</Text>
       </TouchableOpacity>
+      {/* Modal para adicionar itens ao carrinho. */}
       <AddItemModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onAddItem={handleAddItem}
         menu={menu}
       />
+      {/* Lista plana para exibir os itens do carrinho. */}
       <FlatList
         keyboardShouldPersistTaps="handled"
         data={items}
@@ -197,11 +237,13 @@ export default function PagamentoScreen() {
         contentContainerStyle={{ paddingBottom: contentPaddingBottom }}
         ListFooterComponent={() => (
           <>
+            {/* Exibe o total do pedido. */}
             <View style={styles.totalContainer}>
               <Text style={styles.totalText}>Total:</Text>
               <Text style={styles.totalPrice}>R$ {total.toFixed(2).replace('.', ',')}</Text>
             </View>
 
+            {/* Opções de forma de pagamento. */}
             <View style={styles.paymentContainer}>
               <Text style={styles.paymentTitle}>Forma de Pagamento</Text>
               <View style={styles.paymentOptions}>
@@ -232,7 +274,9 @@ export default function PagamentoScreen() {
         )}
       />
 
+      {/* Barra de checkout flutuante na parte inferior. */}
       <View style={[styles.checkoutBar, { bottom: checkoutBottom }, isSmall && styles.checkoutBarSmall, !showCash && styles.checkoutBarCentered]}>
+        {/* Campo para inserir valor em dinheiro, se a forma de pagamento for "dinheiro". */}
         {showCash && (
           <View style={styles.cashInputContainerCompact}>
             <Text style={styles.cashInputLabelCompact}>Dinheiro (R$)</Text>
@@ -246,11 +290,12 @@ export default function PagamentoScreen() {
             />
           </View>
         )}
+        {/* Botão de pagamento. */}
         <TouchableOpacity
           style={[
             styles.checkoutButton,
-            (totalItemsCount === 0 || !paymentMethod) && styles.checkoutButtonDisabled,
-            !showCash && styles.checkoutButtonFull,
+            (totalItemsCount === 0 || !paymentMethod) && styles.checkoutButtonDisabled, // Desabilita se não houver itens ou forma de pagamento.
+            !showCash && styles.checkoutButtonFull, // Estilo para botão de largura total se não houver campo de dinheiro.
             isSmall && styles.checkoutButtonSmall,
           ]}
           onPress={handlePayment}
@@ -261,6 +306,7 @@ export default function PagamentoScreen() {
           <Text style={styles.checkoutButtonText}>Pagar ({totalItemsCount})</Text>
         </TouchableOpacity>
       </View>
+      {/* Componente de notificação. */}
       {notification && (
         <Notification
           visible={notification.visible}

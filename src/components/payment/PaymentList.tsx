@@ -1,8 +1,10 @@
+// Componente que renderiza a lista de itens do pagamento usando FlatList.
 import React from 'react';
 import { FlatList, StyleSheet } from 'react-native';
 import { CartItem } from '../../context/CartContext';
 import { PaymentItemCard } from './PaymentItemCard';
 
+// Propriedades esperadas pelo PaymentList
 interface PaymentListProps {
   items: CartItem[];
   onIncrease: (id: string) => void;
@@ -12,6 +14,7 @@ interface PaymentListProps {
   footer: React.ComponentType<any>;
 }
 
+// Renderiza lista de itens do carrinho para pagamento
 const PaymentList: React.FC<PaymentListProps> = ({
   items,
   onIncrease,
@@ -40,6 +43,7 @@ const PaymentList: React.FC<PaymentListProps> = ({
   );
 };
 
+// Estilos para a lista de pagamento
 const styles = StyleSheet.create({
   list: {
     width: '100%',

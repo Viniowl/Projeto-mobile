@@ -1,29 +1,40 @@
+// Importa ícones da biblioteca MaterialIcons para uso na interface.
 import { MaterialIcons } from '@expo/vector-icons';
+// Importa o hook router da expo-router para navegação entre telas.
 import { router } from 'expo-router';
-import React, { useContext,useEffect, useRef, useState } from 'react';
+// Importa hooks do React para gerenciamento de estado, ciclo de vida e referências.
+import React, { useContext, useEffect, useRef, useState } from 'react';
+// Importa componentes do React Native para construir a interface do usuário.
 import {
   Alert, Animated, Keyboard, KeyboardAvoidingView,
   KeyboardTypeOptions, Platform, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, TouchableWithoutFeedback,
   View,
 } from 'react-native';
+// Importa o SafeAreaView para garantir que o conteúdo não seja sobreposto por barras de status ou notches.
 import { SafeAreaView } from 'react-native-safe-area-context';
+// Importa o AuthContext para acessar o contexto de autenticação.
 import { AuthContext } from '../context/AuthContext';
+// Importa a instância do Axios configurada para fazer requisições à API.
 import api from '../../services/api';
 
+// Define as propriedades esperadas pelo componente de Input.
 type InputProps = {
-  icon: React.ComponentProps<typeof MaterialIcons>['name'];
-  placeholder: string;
-  value: string;
-  onChangeText: (text: string) => void;
-  keyboardType?: KeyboardTypeOptions;
-  accessibilityLabel: string;
-  secureTextEntry?: boolean;
+  icon: React.ComponentProps<typeof MaterialIcons>['name']; // Nome do ícone do MaterialIcons.
+  placeholder: string; // Texto de placeholder do campo.
+  value: string; // Valor atual do campo.
+  onChangeText: (text: string) => void; // Função chamada quando o texto muda.
+  keyboardType?: KeyboardTypeOptions; // Tipo de teclado a ser exibido.
+  accessibilityLabel: string; // Rótulo de acessibilidade.
+  secureTextEntry?: boolean; // Define se o campo é de senha.
 };
 
+// Componente de Input reutilizável com ícone e funcionalidade de visibilidade de senha.
 const Input = ({ icon, placeholder, value, onChangeText, keyboardType, accessibilityLabel, secureTextEntry }: InputProps) => {
+  // Estado para controlar a visibilidade da senha.
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
+  // Alterna a visibilidade da senha.
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
   };
@@ -38,8 +49,9 @@ const Input = ({ icon, placeholder, value, onChangeText, keyboardType, accessibi
         onChangeText={onChangeText}
         keyboardType={keyboardType}
         placeholderTextColor="#6b6b6b"
-        secureTextEntry={secureTextEntry && !isPasswordVisible}
+        secureTextEntry={secureTextEntry && !isPasswordVisible} // Oculta o texto se for um campo de senha e a visibilidade estiver desativada.
       />
+      {/* Mostra o ícone de visibilidade apenas para campos de senha. */}
       {secureTextEntry && (
         <TouchableOpacity onPress={togglePasswordVisibility}>
           <MaterialIcons
@@ -53,18 +65,24 @@ const Input = ({ icon, placeholder, value, onChangeText, keyboardType, accessibi
   );
 };
 
+// Componente principal da tela de Cadastro.
 export default function CadastroScreen() {
+  // Acessa a função de login do contexto de autenticação.
   const { login } = useContext(AuthContext);
+  // Estados para armazenar os dados do formulário de cadastro.
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
   const [endereco, setEndereco] = useState('');
   const [senha, setSenha] = useState('');
+  // Estado para controlar a exibição do banner de sucesso.
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Referências para os valores de animação.
   const logoScale = useRef(new Animated.Value(1)).current;
   const buttonScale = useRef(new Animated.Value(1)).current;
   const successAnim = useRef(new Animated.Value(0)).current;
 
+  // Efeito para animar o logo quando o teclado é exibido ou ocultado.
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', () => {
       Animated.timing(logoScale, { toValue: 0.72, duration: 180, useNativeDriver: true }).start();
@@ -72,36 +90,41 @@ export default function CadastroScreen() {
     const hide = Keyboard.addListener('keyboardDidHide', () => {
       Animated.timing(logoScale, { toValue: 1, duration: 180, useNativeDriver: true }).start();
     });
+    // Remove os listeners ao desmontar o componente para evitar vazamentos de memória.
     return () => {
       show.remove();
       hide.remove();
     };
   }, [logoScale]);
 
+  // Função para lidar com o processo de cadastro do usuário.
   const handleCadastro = async () => {
+    // Validação simples para garantir que todos os campos foram preenchidos.
     if (!nome || !telefone || !endereco || !senha) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos.');
       return;
     }
 
     try {
-      // 1. Registra o novo usuário
+      // 1. Envia uma requisição POST para registrar o novo usuário na API.
       await api.post('/register', { nome, telefone, endereco, senha });
 
-      // 2. Faz o login para obter o token
+      // 2. Realiza o login automaticamente com o novo usuário para obter o token de autenticação.
       await login(telefone, senha);
 
-      // 3. Mostra a animação de sucesso e navega
+      // 3. Ativa a animação de sucesso e navega para a tela de menu.
       setShowSuccess(true);
       Animated.timing(successAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
 
+      // Aguarda um tempo para o usuário ver a mensagem de sucesso e então navega.
       setTimeout(() => {
         Animated.timing(successAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
           setShowSuccess(false);
-          router.push('/menu');
+          router.push('/menu'); // Navega para a tela de menu.
         });
       }, 1400);
     } catch (error: any) {
+      // Exibe uma mensagem de erro caso o cadastro ou login falhe.
       const errorMessage = error.response?.data?.error || 'Ocorreu um erro ao cadastrar.';
       Alert.alert('Erro no Cadastro', errorMessage);
     }
@@ -110,20 +133,21 @@ export default function CadastroScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // Ajusta a tela para o teclado não cobrir os inputs.
         style={{ flex: 1 }}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
             <View style={styles.card}>
               <Animated.Image
-                style={[styles.logo, { transform: [{ scale: logoScale }] }]}
+                style={[styles.logo, { transform: [{ scale: logoScale }] }]} // Aplica a animação de escala no logo.
                 source={require('../../assets/images/logocadastro.png')}
                 resizeMode="contain"
               />
               <Text style={styles.heading}>Crie sua conta</Text>
               <Text style={styles.subheading}>Peça rápido e acompanhe seu pedido</Text>
 
+              {/* Inputs do formulário de cadastro. */}
               <Input
                 icon="person"
                 placeholder="Nome completo"
@@ -155,6 +179,7 @@ export default function CadastroScreen() {
                 secureTextEntry={true}
               />
 
+              {/* Botão para submeter o formulário de cadastro. */}
               <TouchableOpacity
                 style={styles.botao}
                 onPress={handleCadastro}
@@ -168,6 +193,7 @@ export default function CadastroScreen() {
                   <Text style={styles.botaoText}>Criar Conta</Text>
                 </Animated.View>
               </TouchableOpacity>
+              {/* Banner de sucesso que aparece após o cadastro bem-sucedido. */}
               {showSuccess && (
                 <Animated.View
                   accessibilityLiveRegion="polite"
@@ -195,6 +221,7 @@ export default function CadastroScreen() {
   );
 }
 
+// Estilos para os componentes da tela de Cadastro.
 const styles = StyleSheet.create({
   botao: {
     alignItems: 'center',

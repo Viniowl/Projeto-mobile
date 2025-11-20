@@ -1,7 +1,9 @@
+// Componente modal para adicionar itens ao pedido a partir do menu.
 import React from 'react';
-import { Modal, View, Text, FlatList, TouchableOpacity, StyleSheet, Pressable, useWindowDimensions } from 'react-native';
-import { Product, MenuCategory } from '../../context/MenuContext';
+import { FlatList, Modal, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { MenuCategory, Product } from '../../context/MenuContext';
 
+// Propriedades esperadas pelo AddItemModal
 interface AddItemModalProps {
   visible: boolean;
   onClose: () => void;
@@ -9,6 +11,7 @@ interface AddItemModalProps {
   menu: MenuCategory[];
 }
 
+// Renderiza modal para seleção e adição de itens ao pedido
 export function AddItemModal({ visible, onClose, onAddItem, menu }: AddItemModalProps) {
   const { width, height } = useWindowDimensions();
   const isSmall = width < 360 || height < 700;
@@ -52,6 +55,7 @@ export function AddItemModal({ visible, onClose, onAddItem, menu }: AddItemModal
   );
 }
 
+// Estilos para o modal de adicionar item
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,

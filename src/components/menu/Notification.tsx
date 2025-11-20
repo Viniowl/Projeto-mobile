@@ -1,7 +1,9 @@
+// Componente para exibir notificações de sucesso ou erro animadas na tela.
 import { MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 
+// Propriedades esperadas pelo Notification
 interface NotificationProps {
   visible: boolean;
   message: string;
@@ -9,6 +11,7 @@ interface NotificationProps {
   anim: Animated.Value;
 }
 
+// Renderiza notificação animada de sucesso ou erro
 export function Notification({ visible, message, type, anim }: NotificationProps) {
   if (!visible) {
     return null;
@@ -35,6 +38,7 @@ export function Notification({ visible, message, type, anim }: NotificationProps
   );
 }
 
+// Estilos para a notificação animada
 const styles = StyleSheet.create({
   overlay: {
     position: 'absolute',
