@@ -38,6 +38,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
                 if (storagedUser && storagedToken) {
                     const parsedUser = JSON.parse(storagedUser);
+                    // Normaliza para o formato esperado pelo frontend (usa 'nome')
+                    if (parsedUser.name && !parsedUser.nome) {
+                        parsedUser.nome = parsedUser.name;
+                    }
                     setUser(parsedUser);
                     setToken(storagedToken);
                     // O interceptor em api.ts adiciona o token aos headers
@@ -59,11 +63,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const response = await api.post('/login', { telefone, password: senha });
             const { token, user } = response.data;
 
-            setUser(user);
+            // Normaliza o objeto de usuário retornado pelo backend para usar a chave 'nome'
+            const normalizedUser = {
+                id: user.id,
+                nome: user.name ?? user.nome ?? '',
+                telefone: user.telefone,
+            };
+
+            setUser(normalizedUser);
             setToken(token);
 
-            // Salva dados no AsyncStorage
-            await AsyncStorage.setItem('@Pastelaria:user', JSON.stringify(user));
+            // Salva dados no AsyncStorage no formato normalizado
+            await AsyncStorage.setItem('@Pastelaria:user', JSON.stringify(normalizedUser));
             await AsyncStorage.setItem('@Pastelaria:token', token);
             // O interceptor agora usará esse token nas próximas requisições
         } catch (error: any) {
@@ -97,3 +108,4 @@ export function useAuth() {
 }
 
 export { AuthContext };
+

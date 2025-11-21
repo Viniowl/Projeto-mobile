@@ -7,7 +7,7 @@ import { MotiView } from 'moti';
 // Importa hooks do React para gerenciamento de estado e ciclo de vida.
 import React, { useEffect, useState } from 'react';
 // Importa componentes do React Native para construir a interface do usuário.
-import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 // Importa hooks do Reanimated para animações de estilo.
 import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 // Importa SafeAreaView para garantir que o conteúdo não seja sobreposto por barras de status ou notches.
@@ -18,7 +18,9 @@ import { MenuItem } from '../components/menu/MenuItem';
 // Importa o hook useCart para acessar o contexto do carrinho de compras.
 import { useCart } from '../context/CartContext';
 // Importa o hook useMenu e o tipo Product para acessar o contexto do menu.
-import { useMenu, Product } from '../context/MenuContext';
+import { Product, useMenu } from '../context/MenuContext';
+// Importa o hook de autenticação para obter o usuário logado
+import { useAuth } from '../context/AuthContext';
 
 // Define as abas de navegação do menu.
 const TABS = [
@@ -30,6 +32,8 @@ const TABS = [
 export default function Menu() {
   // Obtém o estado do carrinho e a função addToCart do contexto.
   const { state, addToCart } = useCart();
+  // Obtém o usuário autenticado e a função de logout do contexto
+  const { user, logout } = useAuth();
   // Obtém os dados do menu, estado de carregamento e erro do contexto.
   const { menu, loading, error } = useMenu();
   // Estado para controlar a aba ativa ('sabores' ou 'bebidas').
@@ -85,6 +89,16 @@ export default function Menu() {
     router.push('/pagamento');
   };
 
+  // Função para logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.replace('/');
+    } catch (e) {
+      console.error('Erro ao deslogar', e);
+    }
+  };
+
   // Função para verificar se um item já está selecionado no carrinho.
   const isItemSelected = (itemId: string) => {
     return state.items.some((item) => item.id === itemId);
@@ -111,7 +125,15 @@ export default function Menu() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.headerTitle}>Menu</Text>
+      <View style={styles.headerContainer}>
+        <View>
+          <Text style={styles.headerTitle}>Menu</Text>
+          {user && <Text style={styles.welcomeText}>Olá, {user.nome}!</Text>}
+        </View>
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton} accessibilityLabel="Logout">
+          <MaterialIcons name="logout" size={24} color="#f73d04" />
+        </TouchableOpacity>
+      </View>
       {/* Contêiner para os botões das abas. */}
       <View style={styles.tabsContainer}>
         {TABS.map((tab) => (
@@ -181,6 +203,13 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 16,
   },
+  welcomeText: {
+    textAlign: 'center',
+    color: '#3b2f2f',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
   headerTitle: {
     fontSize: 28,
     fontWeight: '800',
@@ -248,5 +277,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     marginLeft: 10,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginTop: 6,
+    marginBottom: 6,
+  },
+  logoutButton: {
+    padding: 8,
+    position: 'absolute',
+    right: 16,
   },
 });

@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // Cria instância do Axios com baseURL do backend
 const api = axios.create({
-  baseURL: 'http://192.168.0.3:3000', // Certifique-se de que este é o seu IP local ou URL do servidor
+  baseURL: 'http://192.168.0.9:3000', // Certifique-se de que este é o seu IP local ou URL do servidor
 });
 
 // Interceptor para adicionar token JWT automaticamente nos headers das requisições
