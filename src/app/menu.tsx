@@ -18,8 +18,12 @@ import { MenuItem } from '../components/menu/MenuItem';
 // Importa o hook useCart para acessar o contexto do carrinho de compras.
 import { useCart } from '../context/CartContext';
 // Importa o hook useMenu e o tipo Product para acessar o contexto do menu.
+<<<<<<< HEAD
 import { Product, useMenu } from '../context/MenuContext';
 // Importa o hook de autenticação para obter o usuário logado
+=======
+import { useMenu, Product } from '../context/MenuContext';
+>>>>>>> fff4764a560b127dda40135e106862b60ac82a39
 import { useAuth } from '../context/AuthContext';
 
 // Define as abas de navegação do menu.
@@ -28,7 +32,7 @@ const TABS = [
   { id: 'bebidas', title: 'Bebidas', icon: 'local-drink' },
 ];
 
-// Componente principal da tela de Menu.
+  // Componente principal da tela de Menu.
 export default function Menu() {
   // Obtém o estado do carrinho e a função addToCart do contexto.
   const { state, addToCart } = useCart();
@@ -36,6 +40,8 @@ export default function Menu() {
   const { user, logout } = useAuth();
   // Obtém os dados do menu, estado de carregamento e erro do contexto.
   const { menu, loading, error } = useMenu();
+  // Obtém o usuário logado do contexto de autenticação.
+  const { user } = useAuth();
   // Estado para controlar a aba ativa ('sabores' ou 'bebidas').
   const [activeTab, setActiveTab] = useState<'sabores' | 'bebidas'>('sabores');
 
@@ -125,6 +131,7 @@ export default function Menu() {
 
   return (
     <SafeAreaView style={styles.container}>
+<<<<<<< HEAD
       <View style={styles.headerContainer}>
         <View>
           <Text style={styles.headerTitle}>Menu</Text>
@@ -133,6 +140,15 @@ export default function Menu() {
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton} accessibilityLabel="Logout">
           <MaterialIcons name="logout" size={24} color="#f73d04" />
         </TouchableOpacity>
+=======
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Menu</Text>
+        {user && (
+          <View style={styles.userNameContainer}>
+            <Text style={styles.userNameText}>{user.nome}</Text>
+          </View>
+        )}
+>>>>>>> fff4764a560b127dda40135e106862b60ac82a39
       </View>
       {/* Contêiner para os botões das abas. */}
       <View style={styles.tabsContainer}>
@@ -203,20 +219,38 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 16,
   },
+<<<<<<< HEAD
   welcomeText: {
     textAlign: 'center',
     color: '#3b2f2f',
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 6,
+=======
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 8,
+>>>>>>> fff4764a560b127dda40135e106862b60ac82a39
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: '800',
-    textAlign: 'center',
-    marginTop: 12,
-    marginBottom: 8,
     color: '#3b2f2f',
+  },
+  userNameContainer: {
+    backgroundColor: '#f73d04',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+  },
+  userNameText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   tabsContainer: {
     flexDirection: 'row',
