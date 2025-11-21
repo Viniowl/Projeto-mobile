@@ -19,6 +19,7 @@ import { MenuItem } from '../components/menu/MenuItem';
 import { useCart } from '../context/CartContext';
 // Importa o hook useMenu e o tipo Product para acessar o contexto do menu.
 import { useMenu, Product } from '../context/MenuContext';
+import { useAuth } from '../context/AuthContext';
 
 // Define as abas de navegação do menu.
 const TABS = [
@@ -26,12 +27,14 @@ const TABS = [
   { id: 'bebidas', title: 'Bebidas', icon: 'local-drink' },
 ];
 
-// Componente principal da tela de Menu.
+  // Componente principal da tela de Menu.
 export default function Menu() {
   // Obtém o estado do carrinho e a função addToCart do contexto.
   const { state, addToCart } = useCart();
   // Obtém os dados do menu, estado de carregamento e erro do contexto.
   const { menu, loading, error } = useMenu();
+  // Obtém o usuário logado do contexto de autenticação.
+  const { user } = useAuth();
   // Estado para controlar a aba ativa ('sabores' ou 'bebidas').
   const [activeTab, setActiveTab] = useState<'sabores' | 'bebidas'>('sabores');
 
@@ -111,7 +114,14 @@ export default function Menu() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.headerTitle}>Menu</Text>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Menu</Text>
+        {user && (
+          <View style={styles.userNameContainer}>
+            <Text style={styles.userNameText}>{user.nome}</Text>
+          </View>
+        )}
+      </View>
       {/* Contêiner para os botões das abas. */}
       <View style={styles.tabsContainer}>
         {TABS.map((tab) => (
@@ -181,13 +191,29 @@ const styles = StyleSheet.create({
     color: 'red',
     fontSize: 16,
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 8,
+  },
   headerTitle: {
     fontSize: 28,
     fontWeight: '800',
-    textAlign: 'center',
-    marginTop: 12,
-    marginBottom: 8,
     color: '#3b2f2f',
+  },
+  userNameContainer: {
+    backgroundColor: '#f73d04',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+  },
+  userNameText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   tabsContainer: {
     flexDirection: 'row',
