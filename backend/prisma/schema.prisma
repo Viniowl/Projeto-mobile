@@ -15,71 +15,71 @@ datasource db {
 }
 
 // Modelo "User": Representa um usuário (cliente) cadastrado no sistema.
-model User {
-  id        String   @id @default(uuid()) // Chave primária única (UUID).
-  name      String   // Nome do usuário.
-  telefone  String   @unique // Telefone para contato, deve ser único para cada usuário.
-  password  String   // Senha do usuário (deve ser armazenada de forma criptografada).
-  endereco  String?  // Endereço do usuário, opcional (?).
-  createdAt DateTime @default(now()) // Data e hora de criação do registro.
-  updatedAt DateTime @updatedAt // Data e hora da última atualização do registro.
+model Usuario {
+  id           String   @id @default(uuid()) // Chave primária única (UUID).
+  nome         String   // Nome do usuário.
+  telefone     String   @unique // Telefone para contato, deve ser único para cada usuário.
+  senha        String   // Senha do usuário (deve ser armazenada de forma criptografada).
+  endereco     String?  // Endereço do usuário, opcional (?).
+  criadoEm     DateTime @default(now()) // Data e hora de criação do registro.
+  atualizadoEm DateTime @updatedAt // Data e hora da última atualização do registro.
 
   // Relação: Um usuário pode ter vários pedidos (Orders).
-  orders    Order[]
+  pedidos   Pedido[]
 }
 
 // Modelo "Category": Representa as categorias dos produtos (ex: "Pastéis Salgados", "Bebidas").
-model Category {
-  id       String    @id @default(uuid())
-  name     String    @unique // Nome da categoria (ex: "Bebidas"), deve ser único.
+model Categoria {
+  id      String    @id @default(uuid())
+  nome    String    @unique // Nome da categoria (ex: "Bebidas"), deve ser único.
   
   // Relação: Uma categoria pode conter vários produtos.
-  products Product[]
+  produtos Produto[]
 }
 
-// Modelo "Product": Representa um item que pode ser vendido (ex: "Pastel de Carne", "Coca-Cola").
-model Product {
+// Modelo "Produto": Representa um item que pode ser vendido (ex: "Pastel de Carne", "Coca-Cola").
+model Produto {
   id          String      @id @default(uuid())
-  name        String      @unique // Nome do produto, deve ser único.
-  price       Float       // Preço do produto.
+  nome        String      @unique // Nome do produto, deve ser único.
+  preco      Float       // Preço do produto.
   
   // Relação: Um produto pertence a uma categoria.
-  category    Category    @relation(fields: [categoryId], references: [id])
-  categoryId  String      // Chave estrangeira para o modelo Category.
+  categoria    Categoria    @relation(fields: [categoriaId], references: [id])
+  categoriaId  String      // Chave estrangeira para o modelo Category.
 
-  // Relação: Um produto pode estar em vários itens de pedido (OrderItems).
-  orderItems  OrderItem[]
+  // Relação: Um produto pode estar em vários itens de pedido.
+  itensPedido  ItemPedido[]
 }
 
-// Modelo "Order": Representa um pedido feito por um usuário.
-model Order {
+// Modelo "Pedido": Representa um pedido feito por um usuário.
+model Pedido {
   id        String      @id @default(uuid())
-  createdAt DateTime    @default(now()) // Data e hora em que o pedido foi feito.
-  status    String      @default("PENDING") // Status do pedido (ex: PENDENTE, CONCLUÍDO, CANCELADO).
+  criadoEm  DateTime    @default(now()) // Data e hora em que o pedido foi feito.
+  status    String      @default("PENDENTE") // Status do pedido (ex: PENDENTE, CONCLUÍDO, CANCELADO).
   total     Float       // Valor total do pedido.
 
   // Relação: Um pedido pertence a um único usuário.
-  user      User        @relation(fields: [userId], references: [id])
-  userId    String      // Chave estrangeira para o modelo User.
+  usuario     Usuario        @relation(fields: [usuarioId], references: [id])
+  usuarioId   String      // Chave estrangeira para o modelo Usuario.
 
   // Relação: Um pedido é composto por vários itens.
-  items     OrderItem[]
+  itens     ItemPedido[]
 }
 
 // Modelo "OrderItem": Representa um item específico dentro de um pedido.
 // Ex: 2 unidades do "Pastel de Queijo" dentro do Pedido #123.
-model OrderItem {
-  id        String  @id @default(uuid())
-  quantity  Int     // Quantidade deste item no pedido.
-  price     Float   // Preço do produto no momento da compra (para histórico).
-  productName String @default("Produto Desconhecido") // Nome do produto no momento da compra.
-  userName  String  @default("Usuário Desconhecido") // Nome do usuário que fez o pedido.
+model ItemPedido {
+  id           String  @id @default(uuid())
+  quantidade   Int     // Quantidade deste item no pedido.
+  preco        Float   // Preço do produto no momento da compra (para histórico).
+  nomeProduto  String @default("Produto Desconhecido") // Nome do produto no momento da compra.
+  nomeUsuario  String  @default("Usuário Desconhecido") // Nome do usuário que fez o pedido.
 
-  // Relação: Este item de pedido pertence a um pedido (Order).
-  order     Order   @relation(fields: [orderId], references: [id])
-  orderId   String  // Chave estrangeira para o modelo Order.
+  // Relação: Este item de pedido pertence a um pedido (Pedido).
+  pedido     Pedido   @relation(fields: [pedidoId], references: [id])
+  pedidoId   String  // Chave estrangeira para o modelo Pedido.
 
   // Relação: Este item de pedido refere-se a um produto (Product).
-  product   Product @relation(fields: [productId], references: [id])
-  productId String  // Chave estrangeira para o modelo Product.
+  produto   Produto @relation(fields: [produtoId], references: [id])
+  produtoId String  // Chave estrangeira para o modelo Produto.
 }

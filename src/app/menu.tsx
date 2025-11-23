@@ -66,16 +66,16 @@ export default function Menu() {
 
   // Encontra a categoria ativa no menu com base na aba selecionada.
   const activeCategory = menu.find(
-    (category) => category.name.toLowerCase() === activeTab.toLowerCase()
+    (category) => category.nome.toLowerCase() === activeTab.toLowerCase()
   );
 
   // Filtra os produtos da categoria ativa.
-  const filteredData = activeCategory ? activeCategory.products : [];
+  const filteredData = activeCategory ? activeCategory.produtos : [];
 
   // Função para lidar com a seleção de um item do menu.
   const handleSelectItem = (item: Product) => {
     // Adiciona o item ao carrinho.
-    addToCart({ id: item.id, name: item.name, price: item.price });
+    addToCart({ id: item.id, nome: item.nome, preco: item.preco });
   };
 
   // Função para lidar com a finalização do pedido.
@@ -214,6 +214,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '800',
     color: '#3b2f2f',
+    textAlign: 'center',
   },
   userNameContainer: {
     backgroundColor: '#f73d04',

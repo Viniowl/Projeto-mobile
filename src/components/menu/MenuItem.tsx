@@ -16,8 +16,8 @@ export function MenuItem({ item, onPress, isSelected }: MenuItemProps) {
     <TouchableOpacity onPress={onPress} style={[styles.itemContainer, isSelected && styles.itemSelected]}>
       {item.image && <Image source={item.image} style={styles.itemImage} />}
       <View style={styles.itemTextWrap}>
-        <Text style={styles.itemTitle}>{item.name}</Text>
-        <Text style={styles.itemPrice}>{`R$ ${item.price.toFixed(2)}`}</Text>
+        <Text style={styles.itemTitle}>{item.nome}</Text>
+        <Text style={styles.itemPrice}>{`R$ ${item.preco.toFixed(2)}`}</Text>
       </View>
     </TouchableOpacity>
   );

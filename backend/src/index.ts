@@ -1,5 +1,5 @@
 
-import { PrismaClient, User } from '@prisma/client';
+import { PrismaClient, Usuario } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import express, { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
@@ -29,7 +29,7 @@ if (!JWT_SECRET) {
 // Interface para estender o objeto Request do Express, adicionando uma propriedade 'user'
 // Isso permite que o middleware de autenticação anexe o usuário autenticado à requisição
 interface AuthRequest extends Request {
-  user?: User;
+  user?: Usuario;
 }
 
 app.post('/register', async (req, res) => {
@@ -45,12 +45,12 @@ app.post('/register', async (req, res) => {
     // Gera um hash seguro da senha antes de armazená-la no banco de dados
     const hashedPassword = await bcrypt.hash(senha, 10);
     // Cria um novo usuário no banco de dados com a senha hasheada
-    const user = await prisma.user.create({
+    const user = await prisma.usuario.create({
       data: {
-        name: nome,
+        nome,
         telefone,
         endereco,
-        password: hashedPassword, // Armazena a senha hasheada
+        senha: hashedPassword, // Armazena a senha hasheada
       },
     });
     // Retorna o usuário criado com status 201 (Created)
@@ -64,16 +64,16 @@ app.post('/register', async (req, res) => {
 
 app.post('/login', async (req, res) => {
   // Extrai telefone e senha do corpo da requisição
-  const { telefone, password } = req.body;
+  const { telefone, senha } = req.body;
 
   // Validação básica: verifica se telefone e senha foram fornecidos
-  if (!telefone || !password) {
+  if (!telefone || !senha) {
     return res.status(400).json({ error: 'Por favor, preencha todos os campos.' });
   }
 
   try {
     // Busca o usuário no banco de dados pelo telefone
-    const user = await prisma.user.findUnique({
+    const user = await prisma.usuario.findUnique({
       where: { telefone },
     });
 
@@ -83,7 +83,7 @@ app.post('/login', async (req, res) => {
     }
 
     // Compara a senha fornecida com a senha hasheada armazenada no banco de dados
-    const passwordMatch = await bcrypt.compare(password, user.password);
+    const passwordMatch = await bcrypt.compare(senha, user.senha);
 
     if (passwordMatch) {
       // Se as senhas coincidirem, gera um token JWT para o usuário
@@ -94,7 +94,7 @@ app.post('/login', async (req, res) => {
         token,
         user: {
           id: user.id,
-          name: user.name,
+          nome: user.nome,
           telefone: user.telefone,
         },
       });
@@ -126,7 +126,7 @@ const authenticateToken = async (req: AuthRequest, res: Response, next: NextFunc
     // Verifica e decodifica o token JWT usando o segredo
     const payload = jwt.verify(token, JWT_SECRET) as { userId: string };
     // Busca o usuário no banco de dados com base no userId do payload
-    const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+    const user = await prisma.usuario.findUnique({ where: { id: payload.userId } });
 
     // Se o usuário não for encontrado, retorna 403 (Forbidden)
     if (!user) {
@@ -150,9 +150,9 @@ const authenticateToken = async (req: AuthRequest, res: Response, next: NextFunc
 app.get('/menu', async (req, res) => {
   try {
     // Busca todas as categorias e inclui os produtos associados a cada categoria
-    const menu = await prisma.category.findMany({
+    const menu = await prisma.categoria.findMany({
       include: {
-        products: true, // Inclui a lista de produtos dentro de cada categoria
+        produtos: true, // Inclui a lista de produtos dentro de cada categoria
       },
     });
     // Retorna o cardápio completo com status 200 (OK)
@@ -184,17 +184,17 @@ app.post('/orders', authenticateToken, async (req: AuthRequest, res: Response) =
   }
   
   // Extrai os IDs dos produtos dos itens do pedido
-  const productIds = items.map((item: { id: string; quantity: number; price: number }) => item.id);
+  const productIds = items.map((item: { id: string; quantidade: number; preco: number }) => item.id);
 
   // Realiza uma transação para buscar e validar o usuário e os produtos simultaneamente
   // Isso garante consistência e melhor performance
   const [user, existingProducts] = await prisma.$transaction([
       // A. Busca e valida o User
-      prisma.user.findUnique({
+      prisma.usuario.findUnique({
           where: { id: userId },
       }),
       // B. Busca e valida os Products
-      prisma.product.findMany({
+      prisma.produto.findMany({
           where: { id: { in: productIds } },
       }),
   ]);
@@ -222,28 +222,28 @@ app.post('/orders', authenticateToken, async (req: AuthRequest, res: Response) =
 
   try {
     // Cria um mapa de IDs de produtos para seus nomes para facilitar a atribuição
-    const productMap = new Map(existingProducts.map(p => [p.id, p.name]));
+    const productMap = new Map(existingProducts.map(p => [p.id, p.nome]));
     // Cria o pedido e os itens do pedido em uma única operação transacional
-    const order = await prisma.order.create({
+    const order = await prisma.pedido.create({
       data: {
         total,
-        userId,
+        usuarioId: userId,
         // Cria os itens do pedido associados a este pedido
-        items: {
-          create: items.map((item: { id: string; quantity: number; price: number }) => ({
-            productId: item.id,
-            quantity: item.quantity,
-            price: item.price,
-            productName: productMap.get(item.id) || 'Produto Desconhecido', // Atribui o nome do produto
-            userName: user.name, // Atribui o nome do usuário ao item do pedido
+        itens: {
+          create: items.map((item: { id: string; quantidade: number; preco: number }) => ({
+            produtoId: item.id,
+            quantidade: item.quantidade,
+            preco: item.preco,
+            nomeProduto: productMap.get(item.id) || 'Produto Desconhecido', // Atribui o nome do produto
+            nomeUsuario: user.nome, // Atribui o nome do usuário ao item do pedido
           })),
         },
       },
       include: {
-        items: true, // Inclui os itens do pedido no objeto de retorno
-        user: {
+        itens: true, // Inclui os itens do pedido no objeto de retorno
+        usuario: {
           select: {
-            name: true, // Inclui apenas o nome do usuário no objeto de retorno
+            nome: true, // Inclui apenas o nome do usuário no objeto de retorno
           }
         }
       },

@@ -22,17 +22,17 @@ const productImageMap: { [key: string]: ImageSourcePropType } = {
 // Interface para um único produto
 export interface Product {
   id: string;
-  name: string;
-  price: number;
-  categoryId: string;
+  nome: string;
+  preco: number;
+  categoriaId: string;
   image?: ImageSourcePropType; // Campo de imagem local
 }
 
 // Interface para uma categoria que contém produtos
 export interface MenuCategory {
   id: string;
-  name: string;
-  products: Product[];
+  nome: string;
+  produtos: Product[];
 }
 
 // Interface para os dados e funções do contexto do menu
@@ -63,10 +63,10 @@ export const MenuProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Atribuir imagens locais aos produtos
       const menuWithImages = menuData.map((category) => ({
         ...category,
-        products: category.products.map((product) => {
+        produtos: category.produtos.map((product) => {
           return {
             ...product,
-            image: productImageMap[product.name] || undefined, // Atribui a imagem ou undefined se não encontrar
+            image: productImageMap[product.nome] || undefined, // Atribui a imagem ou undefined se não encontrar
           };
         }),
       }));

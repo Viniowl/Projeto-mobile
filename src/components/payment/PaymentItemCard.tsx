@@ -20,23 +20,23 @@ export function PaymentItemCard({ item, onIncrease, onDecrease, isSmall }: Payme
   return (
     <View style={[styles.itemCard, isSmall && styles.itemCardSmall]}>
       <View style={styles.itemRow}>
-        <Text style={[styles.itemTitle, isSmall && styles.itemTitleSmall]}>{item.name}</Text>
+        <Text style={[styles.itemTitle, isSmall && styles.itemTitleSmall]}>{item.nome}</Text>
         <View style={styles.priceBadge}>
-          <Text style={styles.itemPrice}>R$ {item.price.toFixed(2).replace('.', ',')}</Text>
+          <Text style={styles.itemPrice}>R$ {item.preco.toFixed(2).replace('.', ',')}</Text>
         </View>
       </View>
 
       <View style={styles.quantityRow}>
         <View style={styles.quantityControls}>
-          <TouchableOpacity style={[styles.qtyButton, isSmall && styles.qtyButtonSmall]} onPress={() => onDecrease(item.id)} accessibilityLabel={`Remover ${item.name}`}>
+          <TouchableOpacity style={[styles.qtyButton, isSmall && styles.qtyButtonSmall]} onPress={() => onDecrease(item.id)} accessibilityLabel={`Remover ${item.nome}`}>
             <MaterialIcons name="remove" size={18} color="#fff" />
           </TouchableOpacity>
           <Text style={[styles.qtyText, isSmall && styles.qtyTextSmall]}>{item.quantity}</Text>
-          <TouchableOpacity style={[styles.qtyButton, isSmall && styles.qtyButtonSmall]} onPress={() => onIncrease(item.id)} accessibilityLabel={`Adicionar ${item.name}`}>
+          <TouchableOpacity style={[styles.qtyButton, isSmall && styles.qtyButtonSmall]} onPress={() => onIncrease(item.id)} accessibilityLabel={`Adicionar ${item.nome}`}>
             <MaterialIcons name="add" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
-        <Text style={[styles.subtotalText, isSmall && styles.subtotalTextSmall]}>R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}</Text>
+        <Text style={[styles.subtotalText, isSmall && styles.subtotalTextSmall]}>R$ {(item.preco * item.quantity).toFixed(2).replace('.', ',')}</Text>
       </View>
     </View>
   );

@@ -59,8 +59,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Função para login do usuário
     async function login(telefone: string, senha: string) {
         try {
-            console.log('Sending login request with:', { telefone, password: senha });
-            const response = await api.post('/login', { telefone, password: senha });
+            console.log('Sending login request with:', { telefone, senha });
+            const response = await api.post('/login', { telefone, senha });
             const { token, user } = response.data;
 
             // Normaliza o objeto de usuário retornado pelo backend para usar a chave 'nome'

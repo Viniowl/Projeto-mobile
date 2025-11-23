@@ -5,8 +5,8 @@ import React, { createContext, ReactNode, useContext, useReducer } from 'react';
 // Interface para os itens do carrinho
 export interface CartItem {
   id: string;
-  name: string;
-  price: number;
+  nome: string;
+  preco: number;
   quantity: number;
 }
 

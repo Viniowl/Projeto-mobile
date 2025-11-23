@@ -42,7 +42,7 @@ export default function PagamentoScreen() {
   const { menu } = useMenu();
 
   // Calcula o total do pedido.
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = items.reduce((sum, item) => sum + item.preco * item.quantity, 0);
 
   // Estados para gerenciar a forma de pagamento, valor em dinheiro e visibilidade do modal.
   const [paymentMethod, setPaymentMethod] = useState<'cartao' | 'pix' | 'dinheiro' | null>(null);
@@ -111,12 +111,12 @@ export default function PagamentoScreen() {
     let itemFound;
     // Procura o item no menu para obter seus detalhes.
     for (const category of menu) {
-      itemFound = category.products.find((i) => i.id === id);
+      itemFound = category.produtos.find((i) => i.id === id);
       if (itemFound) break;
     }
 
     if (itemFound) {
-      addToCart({ id: itemFound.id, name: itemFound.name, price: itemFound.price }); // Adiciona ao carrinho.
+      addToCart({ id: itemFound.id, nome: itemFound.nome, preco: itemFound.preco }); // Adiciona ao carrinho.
     }
     // Animação de escala para o item.
     const a = animRefs.current[id] || (animRefs.current[id] = new Animated.Value(1));
@@ -173,8 +173,8 @@ export default function PagamentoScreen() {
     const orderData = {
       items: items.map(item => ({
         id: item.id, // O backend espera o ID do produto
-        quantity: item.quantity,
-        price: item.price,
+        quantidade: item.quantity,
+        preco: item.preco,
       })),
       total,
       paymentMethod,
@@ -193,7 +193,7 @@ export default function PagamentoScreen() {
 
   // Função para adicionar um item ao carrinho a partir do modal.
   const handleAddItem = (item: Product) => {
-    addToCart({ id: item.id, name: item.name, price: item.price });
+    addToCart({ id: item.id, nome: item.nome, preco: item.preco });
   };
 
   // Condição para exibir o campo de valor em dinheiro.

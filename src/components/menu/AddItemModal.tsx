@@ -32,13 +32,13 @@ export function AddItemModal({ visible, onClose, onAddItem, menu }: AddItemModal
             </Pressable>
           </View>
           <FlatList
-            data={menu.flatMap(category => category.products)}
+            data={menu.flatMap(category => category.produtos)}
             keyExtractor={(it) => it.id}
             renderItem={({ item }) => (
               <View style={styles.modalItem}>
                 <View>
-                  <Text style={styles.modalItemTitle}>{item.name}</Text>
-                  <Text style={styles.modalItemPrice}>R$ {item.price.toFixed(2).replace('.', ',')}</Text>
+                  <Text style={styles.modalItemTitle}>{item.nome}</Text>
+                  <Text style={styles.modalItemPrice}>R$ {item.preco.toFixed(2).replace('.', ',')}</Text>
                 </View>
                 <TouchableOpacity
                   style={styles.modalAddButton}
