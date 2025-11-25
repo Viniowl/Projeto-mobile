@@ -17,7 +17,8 @@ interface AuthContextData {
     token: string | null;
     loading: boolean;
     login(telefone: string, senha: string): Promise<void>;
-    logout(): void;
+    logout(): Promise<void>;
+    entrarComoConvidado(): Promise<void>;
 }
 
 // Cria o contexto de autenticação
@@ -91,8 +92,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setToken(null);
     }
 
+    async function entrarComoConvidado() {
+        await logout();
+        const guestUser: User = {
+            id: "guest-user",
+            nome: "Convidado",
+            telefone: "",
+        };
+        setUser(guestUser);
+    }
+
+
     return (
-        <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+        <AuthContext.Provider value={{ user, token, loading, login, logout, entrarComoConvidado }}>
             {children}
         </AuthContext.Provider>
     );

@@ -5,9 +5,9 @@ import { router } from 'expo-router';
 // Importa MotiView para animações declarativas.
 import { MotiView } from 'moti';
 // Importa hooks do React para gerenciamento de estado e ciclo de vida.
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 // Importa componentes do React Native para construir a interface do usuário.
-import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 // Importa hooks do Reanimated para animações de estilo.
 import { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 // Importa SafeAreaView para garantir que o conteúdo não seja sobreposto por barras de status ou notches.
@@ -20,6 +20,7 @@ import { useCart } from '../context/CartContext';
 // Importa o hook useMenu e o tipo Product para acessar o contexto do menu.
 import { Product, useMenu } from '../context/MenuContext';
 // Importa o hook de autenticação para obter o usuário logado
+import { Notification } from '../components/menu/Notification';
 import { useAuth } from '../context/AuthContext';
 
 // Define as abas de navegação do menu.
@@ -36,6 +37,9 @@ export default function Menu() {
   const { user, logout } = useAuth();
   // Obtém os dados do menu, estado de carregamento e erro do contexto.
   const { menu, loading, error } = useMenu();
+  // Notificação local (sucesso / erro)
+  const [notification, setNotification] = useState<{ visible: boolean; message: string; type: 'success' | 'error'; actionLabel?: string; onAction?: () => void } | null>(null);
+  const notificationAnim = useRef(new Animated.Value(0)).current;
   // Estado para controlar a aba ativa ('sabores' ou 'bebidas').
   const [activeTab, setActiveTab] = useState<'sabores' | 'bebidas'>('sabores');
 
@@ -80,9 +84,21 @@ export default function Menu() {
 
   // Função para lidar com a finalização do pedido.
   const handlePlaceOrder = () => {
+    if (user?.id === "guest-user") {
+      setNotification({ visible: true, message: 'Você precisa estar logado para finalizar o pedido.', type: 'error', actionLabel: 'Fazer Login', onAction: () => router.push('/login') });
+      Animated.timing(notificationAnim, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+      setTimeout(() => {
+        Animated.timing(notificationAnim, { toValue: 0, duration: 180, useNativeDriver: true }).start(() => setNotification(null));
+      }, 2000);
+      return;
+    }
     // Verifica se há itens no carrinho antes de finalizar o pedido.
     if (state.items.length === 0) {
-      Alert.alert('Nenhum item selecionado', 'Por favor, selecione ao menos um item para fazer o pedido.');
+      setNotification({ visible: true, message: 'Por favor, selecione ao menos um item para fazer o pedido.', type: 'error' });
+      Animated.timing(notificationAnim, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+      setTimeout(() => {
+        Animated.timing(notificationAnim, { toValue: 0, duration: 180, useNativeDriver: true }).start(() => setNotification(null));
+      }, 2000);
       return;
     }
     // Navega para a tela de pagamento.
@@ -186,6 +202,16 @@ export default function Menu() {
           </Text>
         </TouchableOpacity>
       </View>
+      {notification && (
+        <Notification
+          visible={notification.visible}
+          message={notification.message}
+          type={notification.type}
+          anim={notificationAnim}
+          actionLabel={notification.actionLabel}
+          onAction={notification.onAction}
+        />
+      )}
     </SafeAreaView>
   );
 }

@@ -6,9 +6,18 @@ import { router } from "expo-router";
 import { BackHandler, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 // Importa SafeAreaProvider e SafeAreaView para garantir que o conteúdo seja exibido dentro da área segura da tela
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from '../context/AuthContext';
 
 // Define o componente principal da tela inicial
 export default function Index(){
+
+    const { entrarComoConvidado } = useAuth();
+
+    function handleEntrarComoConvidado() {
+        entrarComoConvidado();
+        router.navigate("/menu");
+    }
+
     return(
     // SafeAreaProvider envolve a aplicação para gerenciar áreas seguras
     <SafeAreaProvider>
@@ -21,7 +30,7 @@ export default function Index(){
                     style={styles.logo}
                  source={require('../../assets/images/logopastel.png')}/>
                 {/* Botão para entrar como convidado, navegando para a tela de menu */}
-                <TouchableOpacity style={styles.button} onPress = {() => router.navigate("/menu")}>
+                <TouchableOpacity style={styles.button} onPress = {handleEntrarComoConvidado}>
                     <View style={styles.buttonContent}>
                         <MaterialIcons name="person" size={20} color="#fff" style={styles.buttonIcon} />
                         <Text style = {styles.buttonText}>Entrar como Convidado</Text>

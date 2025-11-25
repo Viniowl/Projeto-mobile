@@ -1,7 +1,7 @@
 // Componente para exibir notificações de sucesso ou erro animadas na tela.
 import { MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 // Propriedades esperadas pelo Notification
 interface NotificationProps {
@@ -9,10 +9,13 @@ interface NotificationProps {
   message: string;
   type: 'success' | 'error';
   anim: Animated.Value;
+  actionLabel?: string;
+  onAction?: () => void;
+  title?: string;
 }
 
 // Renderiza notificação animada de sucesso ou erro
-export function Notification({ visible, message, type, anim }: NotificationProps) {
+export function Notification({ visible, message, type, anim, actionLabel, onAction, title }: NotificationProps) {
   if (!visible) {
     return null;
   }
@@ -20,7 +23,7 @@ export function Notification({ visible, message, type, anim }: NotificationProps
   const isSuccess = type === 'success';
   const icon = isSuccess ? 'check-circle' : 'error';
   const boxStyle = isSuccess ? styles.successBox : styles.errorBox;
-  const title = isSuccess ? 'Pagamento confirmado' : 'Erro';
+  const displayedTitle = title || (isSuccess ? 'Sucesso' : 'Erro');
 
   return (
     <View style={styles.overlay} pointerEvents="box-none">
@@ -31,8 +34,13 @@ export function Notification({ visible, message, type, anim }: NotificationProps
         ]}
       >
         <MaterialIcons name={icon} size={isSuccess ? 64 : 56} color="#fff" />
-        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.title}>{displayedTitle}</Text>
         <Text style={styles.message}>{message}</Text>
+        {typeof onAction === 'function' && actionLabel && (
+          <TouchableOpacity style={styles.actionButton} onPress={onAction} accessibilityLabel={actionLabel}>
+            <Text style={styles.actionLabel}>{actionLabel}</Text>
+          </TouchableOpacity>
+        )}
       </Animated.View>
     </View>
   );
@@ -78,5 +86,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 6,
     opacity: 0.95,
+  },
+  actionButton: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 10,
+    borderRadius: 8,
+  },
+  actionLabel: {
+    color: '#2d160e',
+    fontWeight: '700',
   },
 });

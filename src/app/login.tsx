@@ -3,24 +3,25 @@ import { MaterialIcons } from '@expo/vector-icons';
 // Importa o hook `router` da biblioteca expo-router para gerenciar a navegação entre as telas.
 import { router } from 'expo-router';
 // Importa o React e os hooks `useState` e `useContext` para gerenciar o estado e o contexto do componente.
-import React, { useState, useContext } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 // Importa vários componentes do React Native para construir a interface do usuário.
 import {
-    Alert, // Componente para exibir alertas nativos.
-    Keyboard, // Módulo para interagir com o teclado virtual.
-    KeyboardAvoidingView, // Componente que ajusta a tela quando o teclado é exibido.
-    KeyboardTypeOptions, // Tipos de teclado (numérico, email, etc.).
-    Platform, // Módulo para detectar a plataforma (iOS ou Android).
-    StyleSheet, // Módulo para criar e gerenciar estilos.
-    Text, // Componente para exibir texto.
-    TextInput, // Componente para entrada de texto.
-    TouchableOpacity, // Componente que responde a toques com um feedback de opacidade.
-    TouchableWithoutFeedback, // Componente que responde a toques sem feedback visual.
-    View, // Componente básico de contêiner.
+  Animated,
+  Keyboard, // Módulo para interagir com o teclado virtual.
+  KeyboardAvoidingView, // Componente que ajusta a tela quando o teclado é exibido.
+  KeyboardTypeOptions, // Tipos de teclado (numérico, email, etc.).
+  Platform, // Módulo para detectar a plataforma (iOS ou Android).
+  StyleSheet, // Módulo para criar e gerenciar estilos.
+  Text, // Componente para exibir texto.
+  TextInput, // Componente para entrada de texto.
+  TouchableOpacity, // Componente que responde a toques com um feedback de opacidade.
+  TouchableWithoutFeedback, // Componente que responde a toques sem feedback visual.
+  View
 } from 'react-native';
 // Importa o SafeAreaView para garantir que o conteúdo não seja sobreposto por elementos da interface do sistema.
 import { SafeAreaView } from 'react-native-safe-area-context';
 // Importa o AuthContext para acessar o estado de autenticação e as funções relacionadas.
+import { Notification } from '../components/menu/Notification';
 import { AuthContext } from '../context/AuthContext';
 
 // Define as propriedades (props) que o componente Input espera receber.
@@ -81,6 +82,8 @@ export default function LoginScreen() {
   const [senha, setSenha] = useState('');
   // Acessa a função `login` do contexto de autenticação.
   const { login } = useContext(AuthContext);
+  const [notification, setNotification] = useState<{ visible: boolean; message: string; type: 'success' | 'error'; actionLabel?: string; onAction?: () => void } | null>(null);
+  const notificationAnim = useRef(new Animated.Value(0)).current;
 
   // Função para lidar com a tentativa de login.
   const handleLogin = async () => {
@@ -90,18 +93,32 @@ export default function LoginScreen() {
 
     // Verifica se ambos os campos foram preenchidos.
     if (!trimmedTelefone || !trimmedSenha) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      setNotification({ visible: true, message: 'Por favor, preencha todos os campos.', type: 'error' });
+      Animated.timing(notificationAnim, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+      setTimeout(() => {
+        Animated.timing(notificationAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => setNotification(null));
+      }, 2000);
       return; // Interrompe a execução se os campos estiverem vazios.
     }
 
     try {
       // Chama a função de login do AuthContext com as credenciais.
       await login(trimmedTelefone, trimmedSenha);
-      // Se o login for bem-sucedido, navega para a tela de menu.
-      router.push('/menu');
+      // Se o login for bem-sucedido, mostra notificação de sucesso e navega para o menu.
+      setNotification({ visible: true, message: 'Login realizado com sucesso!', type: 'success' });
+      Animated.timing(notificationAnim, { toValue: 1, duration: 240, useNativeDriver: true }).start();
+      setTimeout(() => {
+        Animated.timing(notificationAnim, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => setNotification(null));
+        router.push('/menu');
+      }, 900);
     } catch (error: any) {
-      // Se ocorrer um erro, exibe um alerta com a mensagem de erro.
-      Alert.alert('Erro no Login', error.message || 'Ocorreu um erro.');
+      // Se ocorrer um erro, exibe um alerta estilizado com a mensagem de erro.
+      const errorMessage = error.message || 'Ocorreu um erro.';
+      setNotification({ visible: true, message: errorMessage, type: 'error' });
+      Animated.timing(notificationAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      setTimeout(() => {
+        Animated.timing(notificationAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => setNotification(null));
+      }, 2200);
     }
   };
 
@@ -158,6 +175,9 @@ export default function LoginScreen() {
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+      {notification && (
+        <Notification visible={notification.visible} message={notification.message} type={notification.type} anim={notificationAnim} />
+      )}
     </SafeAreaView>
   );
 }

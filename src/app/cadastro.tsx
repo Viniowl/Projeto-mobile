@@ -6,14 +6,15 @@ import { router } from 'expo-router';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 // Importa componentes do React Native para construir a interface do usuário.
 import {
-  Alert, Animated, Keyboard, KeyboardAvoidingView,
+  Animated, Keyboard, KeyboardAvoidingView,
   KeyboardTypeOptions, Platform, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, TouchableWithoutFeedback,
-  View,
+  View
 } from 'react-native';
 // Importa o SafeAreaView para garantir que o conteúdo não seja sobreposto por barras de status ou notches.
 import { SafeAreaView } from 'react-native-safe-area-context';
 // Importa o AuthContext para acessar o contexto de autenticação.
+import { Notification } from '../components/menu/Notification';
 import { AuthContext } from '../context/AuthContext';
 // Importa a instância do Axios configurada para fazer requisições à API.
 import api from '../../services/api';
@@ -74,13 +75,13 @@ export default function CadastroScreen() {
   const [telefone, setTelefone] = useState('');
   const [endereco, setEndereco] = useState('');
   const [senha, setSenha] = useState('');
-  // Estado para controlar a exibição do banner de sucesso.
-  const [showSuccess, setShowSuccess] = useState(false);
+  // Estado para controlar notificações (success/error)
+  const [notification, setNotification] = useState<{ visible: boolean; message: string; type: 'success' | 'error' } | null>(null);
 
   // Referências para os valores de animação.
   const logoScale = useRef(new Animated.Value(1)).current;
   const buttonScale = useRef(new Animated.Value(1)).current;
-  const successAnim = useRef(new Animated.Value(0)).current;
+  const notificationAnim = useRef(new Animated.Value(0)).current;
 
   // Efeito para animar o logo quando o teclado é exibido ou ocultado.
   useEffect(() => {
@@ -101,7 +102,11 @@ export default function CadastroScreen() {
   const handleCadastro = async () => {
     // Validação simples para garantir que todos os campos foram preenchidos.
     if (!nome || !telefone || !endereco || !senha) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      setNotification({ visible: true, message: 'Por favor, preencha todos os campos.', type: 'error' });
+      Animated.timing(notificationAnim, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+      setTimeout(() => {
+        Animated.timing(notificationAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => setNotification(null));
+      }, 2000);
       return;
     }
 
@@ -112,21 +117,23 @@ export default function CadastroScreen() {
       // 2. Realiza o login automaticamente com o novo usuário para obter o token de autenticação.
       await login(telefone, senha);
 
-      // 3. Ativa a animação de sucesso e navega para a tela de menu.
-      setShowSuccess(true);
-      Animated.timing(successAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
-
-      // Aguarda um tempo para o usuário ver a mensagem de sucesso e então navega.
+      // 3. Mostra notificação de sucesso e navega para a tela de menu.
+      setNotification({ visible: true, message: 'Cadastro realizado com sucesso!', type: 'success' });
+      Animated.timing(notificationAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
       setTimeout(() => {
-        Animated.timing(successAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
-          setShowSuccess(false);
-          router.push('/menu'); // Navega para a tela de menu.
+        Animated.timing(notificationAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
+          setNotification(null);
+          router.push('/menu');
         });
       }, 1400);
     } catch (error: any) {
       // Exibe uma mensagem de erro caso o cadastro ou login falhe.
       const errorMessage = error.response?.data?.error || 'Ocorreu um erro ao cadastrar.';
-      Alert.alert('Erro no Cadastro', errorMessage);
+      setNotification({ visible: true, message: errorMessage, type: 'error' });
+      Animated.timing(notificationAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      setTimeout(() => {
+        Animated.timing(notificationAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => setNotification(null));
+      }, 2200);
     }
   };
 
@@ -193,25 +200,14 @@ export default function CadastroScreen() {
                   <Text style={styles.botaoText}>Criar Conta</Text>
                 </Animated.View>
               </TouchableOpacity>
-              {/* Banner de sucesso que aparece após o cadastro bem-sucedido. */}
-              {showSuccess && (
-                <Animated.View
-                  accessibilityLiveRegion="polite"
-                  style={[
-                    styles.successBanner,
-                    {
-                      opacity: successAnim,
-                      transform: [
-                        {
-                          translateY: successAnim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] }),
-                        },
-                      ],
-                    },
-                  ]}
-                >
-                  <MaterialIcons name="check-circle" size={20} color="#fff" />
-                  <Text style={styles.successText}>Cadastro realizado com sucesso!</Text>
-                </Animated.View>
+              {/* Notification (success / error) */}
+              {notification && (
+                <Notification
+                  visible={notification.visible}
+                  message={notification.message}
+                  type={notification.type}
+                  anim={notificationAnim}
+                />
               )}
             </View>
           </ScrollView>
