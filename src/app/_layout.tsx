@@ -23,6 +23,16 @@ export default function Layout(){
                             name="index"
                             options={{headerShown:false}}
                         />
+                        {/* Define a tela 'cadastro' e oculta o cabeçalho. */}
+                        <Stack.Screen
+                            name="cadastro"
+                            options={{headerShown: false}}
+                        />
+                        {/* Define a tela 'login' e oculta o cabeçalho. */}
+                        <Stack.Screen
+                            name="login"
+                            options={{headerShown: false}}
+                        />
                         {/* Define a tela 'menu' e oculta o cabeçalho. */}
                         <Stack.Screen
                             name="menu"

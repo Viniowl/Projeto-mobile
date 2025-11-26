@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   itemSelected: {
-    backgroundColor: '#ffe9d6',
+    backgroundColor: '#b46016ff',
     borderColor: '#f73d04',
     borderWidth: 1,
   },
